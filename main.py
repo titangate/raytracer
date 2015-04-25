@@ -116,6 +116,39 @@ class MultiJitteredSampler(object):
             rays.append(origin)
         return rays
 
+class ConcentricMapSampler(MultiJitteredSampler):
+    def __init__(self, *args, **kwargs):
+        super(ConcentricMapSampler, self).__init__(*args, **kwargs)
+        concentric_patterns = []
+        for samples in self.patterns:
+            concentric_sample = []
+            for sample in samples:
+                x = sample[0] * 2 - 1
+                y = sample[1] * 2 - 1
+                if x > -y:
+                    if x > y:
+                        r = x
+                        phi = y / x
+                    else:
+                        r = y
+                        phi = 2 - x / y
+                else:
+                    if x < y:
+                        r = -x
+                        phi = 4 + y / x
+                    else:
+                        r = -y
+                        if y != 0:
+                            # at origin
+                            phi = 6 - x / y
+                        else:
+                            phi = 0
+                phi *= numpy.pi / 4.0
+                concentric_sample.append((r * numpy.cos(phi), r * numpy.sin(phi)))
+            concentric_patterns.append(concentric_sample)
+        self.patterns = concentric_patterns
+
+
 class ViewPlane(object):
     def __init__(self, resolution, pixel_size, sampler=RegularSampler):
         self.resolution = resolution
@@ -176,5 +209,6 @@ class World(object):
               if event.type == pygame.QUIT: 
                   sys.exit(0)
 
-w=World()
-w.render()
+if __name__ == "__main__":
+    w=World()
+    w.render()
