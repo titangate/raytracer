@@ -81,31 +81,40 @@ class Tracer(object):
         else:
             return (0.0,0.0,0.0)
 
+def RegularSampler(row, column, resolution, pixel_size):
+    origin = numpy.zeros(3)
+    origin[0] = pixel_size*(column - resolution[0] / 2 + 0.5)
+    origin[1] = pixel_size*(row - resolution[1] / 2 + 0.5)
+    origin[2] = 1000.0
+    return (origin,)
+
+def GetJitteredSampler(sample_dim=2, pattern_size=83):
+    samples = []
+    for i in xrange(-sample_dim/2, sample_dim/2):
+        for j in xrange(-sample_dim, sample_dim/2):
+            samples.append(((i + random.uniform(0,1)) / sample_dim, (j + random.uniform(0,1)) / sample_dim))
+    def JitteredSampler(row, column, resolution, pixel_size):
+        rays = []
+        for sample in samples:
+            origin = numpy.zeros(3)
+            origin[0] = pixel_size*(column - resolution[0] / 2 + sample[0] )
+            origin[1] = pixel_size*(row - resolution[1] / 2 + sample[1] )
+            origin[2] = 1000.0
+            rays.append(origin)
+        return rays
+    return JitteredSampler
+
 class ViewPlane(object):
-    def __init__(self, resolution, pixel_size, anti_alias_samples=0):
+    def __init__(self, resolution, pixel_size, sampler=RegularSampler):
         self.resolution = resolution
         self.pixel_size = pixel_size
-        self.anti_alias_samples = anti_alias_samples
+        self.sampler = sampler
 
 
     def iter_row(self, row):
         for column in xrange(self.resolution[0]):
-            if self.anti_alias_samples == 0:
-                origin = numpy.zeros(3)
-                origin[0] = self.pixel_size*(column - self.resolution[0] / 2 + 0.5)
-                origin[1] = self.pixel_size*(row - self.resolution[1] / 2 + 0.5)
-                origin[2] = 1000.0
-                yield ( (Ray(origin = origin, direction = (0.0,0.0,-1.0)),), (column,row))
-            else:
-                rays = []
-                for i in xrange(-self.anti_alias_samples/2, self.anti_alias_samples/2):
-                    for j in xrange(-self.anti_alias_samples, self.anti_alias_samples/2):
-                        origin = numpy.zeros(3)
-                        origin[0] = self.pixel_size*(column - self.resolution[0] / 2 + (i + random.uniform(0,1)) / self.anti_alias_samples )
-                        origin[1] = self.pixel_size*(row - self.resolution[1] / 2 + (j + random.uniform(0,1)) / self.anti_alias_samples )
-                        origin[2] = 1000.0
-                        rays.append(Ray(origin = origin, direction = (0.0,0.0,-1.0)))
-                yield (rays, (column,row))
+            rays = [Ray(origin=origin, direction=(0,0,-1.0)) for origin in self.sampler(row, column, self.resolution, self.pixel_size)]
+            yield (rays, (column,row))
 
     def __iter__(self):
         for row in xrange(self.resolution[1]):
@@ -113,7 +122,7 @@ class ViewPlane(object):
 
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, anti_alias_samples=2)
+        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, sampler=GetJitteredSampler(sample_dim=2))
         self.background_color = (0.0,0.0,0.0)
         self.objects = []
         # initiate objects
