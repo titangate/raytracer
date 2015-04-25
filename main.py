@@ -3,6 +3,7 @@ import pygame
 import math
 import numpy
 import sys
+import random
 
 INF = sys.maxint
 epsilon = 1.0e-7
@@ -81,18 +82,30 @@ class Tracer(object):
             return (0.0,0.0,0.0)
 
 class ViewPlane(object):
-    def __init__(self, resolution, pixel_size):
+    def __init__(self, resolution, pixel_size, anti_alias_samples=0):
         self.resolution = resolution
         self.pixel_size = pixel_size
+        self.anti_alias_samples = anti_alias_samples
 
 
     def iter_row(self, row):
         for column in xrange(self.resolution[0]):
-            origin = numpy.zeros(3)
-            origin[0] = self.pixel_size*(column - self.resolution[0] / 2 + 0.5)
-            origin[1] = self.pixel_size*(row - self.resolution[1] / 2 + 0.5)
-            origin[2] = 1000.0
-            yield ( Ray(origin = origin, direction = (0.0,0.0,-1.0)), (column,row))
+            if self.anti_alias_samples == 0:
+                origin = numpy.zeros(3)
+                origin[0] = self.pixel_size*(column - self.resolution[0] / 2 + 0.5)
+                origin[1] = self.pixel_size*(row - self.resolution[1] / 2 + 0.5)
+                origin[2] = 1000.0
+                yield ( (Ray(origin = origin, direction = (0.0,0.0,-1.0)),), (column,row))
+            else:
+                rays = []
+                for i in xrange(-self.anti_alias_samples/2, self.anti_alias_samples/2):
+                    for j in xrange(-self.anti_alias_samples, self.anti_alias_samples/2):
+                        origin = numpy.zeros(3)
+                        origin[0] = self.pixel_size*(column - self.resolution[0] / 2 + (i + random.uniform(0,1)) / self.anti_alias_samples )
+                        origin[1] = self.pixel_size*(row - self.resolution[1] / 2 + (j + random.uniform(0,1)) / self.anti_alias_samples )
+                        origin[2] = 1000.0
+                        rays.append(Ray(origin = origin, direction = (0.0,0.0,-1.0)))
+                yield (rays, (column,row))
 
     def __iter__(self):
         for row in xrange(self.resolution[1]):
@@ -100,7 +113,7 @@ class ViewPlane(object):
 
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0)
+        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, anti_alias_samples=2)
         self.background_color = (0.0,0.0,0.0)
         self.objects = []
         # initiate objects
@@ -126,8 +139,11 @@ class World(object):
         im = Image.new("RGB", self.viewplane.resolution)
         tracer = Tracer(self)
         for row in self.viewplane:
-            for ray, pixel in row:
-                color = tracer.trace_ray(ray)
+            for rays, pixel in row:
+                color = numpy.zeros(3)
+                for ray in rays:
+                    color += tracer.trace_ray(ray)
+                color /= len(rays)
                 im.putpixel(pixel, (int(color[0]*255), int(color[1]*255), int(color[2]*255)))
                 pxarray[pixel[0]][pixel[1]] = (int(color[0]*255), int(color[1]*255), int(color[2]*255))
 
@@ -137,9 +153,7 @@ class World(object):
         while True: 
            for event in pygame.event.get(): 
               if event.type == pygame.QUIT: 
-                  sys.exit(0) 
-              else: 
-                  print event 
+                  sys.exit(0)
 
 w=World()
 w.render()
