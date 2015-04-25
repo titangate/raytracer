@@ -81,37 +81,40 @@ class Tracer(object):
         else:
             return (0.0,0.0,0.0)
 
-def RegularSampler(row, column, resolution, pixel_size):
-    origin = numpy.zeros(3)
-    origin[0] = pixel_size*(column - resolution[0] / 2 + 0.5)
-    origin[1] = pixel_size*(row - resolution[1] / 2 + 0.5)
-    origin[2] = 1000.0
-    return (origin,)
+class RegularSampler(object):
+    def sample(self, row, column, resolution, pixel_size):
+        origin = numpy.zeros(3)
+        origin[0] = pixel_size*(column - resolution[0] / 2 + 0.5)
+        origin[1] = pixel_size*(row - resolution[1] / 2 + 0.5)
+        origin[2] = 1000.0
+        return (origin,)
 
-def GetMultiJitteredSampler(sample_dim=2, pattern_size=83):
-    patterns = []
-    for i in xrange(pattern_size):
-        samples = []
-        idx_to_shuffle_row = range(sample_dim)
-        idx_to_shuffle_col = range(sample_dim)
-        random.shuffle(idx_to_shuffle_col)
-        random.shuffle(idx_to_shuffle_row)
-        dim = float(sample_dim)
-        for i in xrange(sample_dim):
-            for j in xrange(sample_dim):
-                samples.append(((i + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_row[i] / dim, (j + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_col[j] / dim))
-        patterns.append(samples)
+class MultiJitteredSampler(object):
+    def __init__(self, sample_dim=2, pattern_size=83):
+        self.sample_dim = sample_dim
+        self.pattern_size = pattern_size
+        self.patterns = []
+        for i in xrange(pattern_size):
+            samples = []
+            idx_to_shuffle_row = range(sample_dim)
+            idx_to_shuffle_col = range(sample_dim)
+            random.shuffle(idx_to_shuffle_col)
+            random.shuffle(idx_to_shuffle_row)
+            dim = float(sample_dim)
+            for i in xrange(sample_dim):
+                for j in xrange(sample_dim):
+                    samples.append(((i + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_row[i] / dim, (j + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_col[j] / dim))
+            self.patterns.append(samples)
 
-    def JitteredSampler(row, column, resolution, pixel_size):
+    def sample(self, row, column, resolution, pixel_size):
         rays = []
-        for sample in random.choice(patterns):
+        for sample in random.choice(self.patterns):
             origin = numpy.zeros(3)
             origin[0] = pixel_size*(column - resolution[0] / 2 + sample[0] )
             origin[1] = pixel_size*(row - resolution[1] / 2 + sample[1] )
             origin[2] = 1000.0
             rays.append(origin)
         return rays
-    return JitteredSampler
 
 class ViewPlane(object):
     def __init__(self, resolution, pixel_size, sampler=RegularSampler):
@@ -122,7 +125,7 @@ class ViewPlane(object):
 
     def iter_row(self, row):
         for column in xrange(self.resolution[0]):
-            rays = [Ray(origin=origin, direction=(0,0,-1.0)) for origin in self.sampler(row, column, self.resolution, self.pixel_size)]
+            rays = [Ray(origin=origin, direction=(0,0,-1.0)) for origin in self.sampler.sample(row, column, self.resolution, self.pixel_size)]
             yield (rays, (column,row))
 
     def __iter__(self):
@@ -131,7 +134,7 @@ class ViewPlane(object):
 
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, sampler=GetMultiJitteredSampler(sample_dim=2))
+        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, sampler=MultiJitteredSampler(sample_dim=2))
         self.background_color = (0.0,0.0,0.0)
         self.objects = []
         # initiate objects
