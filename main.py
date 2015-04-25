@@ -88,14 +88,23 @@ def RegularSampler(row, column, resolution, pixel_size):
     origin[2] = 1000.0
     return (origin,)
 
-def GetJitteredSampler(sample_dim=2, pattern_size=83):
-    samples = []
-    for i in xrange(-sample_dim/2, sample_dim/2):
-        for j in xrange(-sample_dim, sample_dim/2):
-            samples.append(((i + random.uniform(0,1)) / sample_dim, (j + random.uniform(0,1)) / sample_dim))
+def GetMultiJitteredSampler(sample_dim=2, pattern_size=83):
+    patterns = []
+    for i in xrange(pattern_size):
+        samples = []
+        idx_to_shuffle_row = range(sample_dim)
+        idx_to_shuffle_col = range(sample_dim)
+        random.shuffle(idx_to_shuffle_col)
+        random.shuffle(idx_to_shuffle_row)
+        dim = float(sample_dim)
+        for i in xrange(sample_dim):
+            for j in xrange(sample_dim):
+                samples.append(((i + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_row[i] / dim, (j + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_col[j] / dim))
+        patterns.append(samples)
+
     def JitteredSampler(row, column, resolution, pixel_size):
         rays = []
-        for sample in samples:
+        for sample in random.choice(patterns):
             origin = numpy.zeros(3)
             origin[0] = pixel_size*(column - resolution[0] / 2 + sample[0] )
             origin[1] = pixel_size*(row - resolution[1] / 2 + sample[1] )
@@ -122,7 +131,7 @@ class ViewPlane(object):
 
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, sampler=GetJitteredSampler(sample_dim=2))
+        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, sampler=GetMultiJitteredSampler(sample_dim=2))
         self.background_color = (0.0,0.0,0.0)
         self.objects = []
         # initiate objects
