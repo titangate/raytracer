@@ -53,7 +53,7 @@ class Plane(object):
         # ray is parallel to the plane
         if numpy.dot(ray.direction, self.normal) == 0:
             return None
-        t = numpy.linalg.norm((self.origin - ray.origin) * self.normal / numpy.dot(ray.direction, self.normal))
+        t = numpy.dot((self.origin - ray.origin) , self.normal) / numpy.dot(ray.direction, self.normal)
         if t > epsilon:
             hit_point = ray.origin + t * ray.direction
             return ShadeRecord(normal=self.normal, hit_point=hit_point, tmin=t)
@@ -98,15 +98,36 @@ class ViewPlane(object):
         for row in xrange(self.resolution[1]):
             yield self.iter_row(row) 
 
+class ViewPlanePerspective(ViewPlane):
+    def __init__(self, resolution, pixel_size, sampler=RegularSampler):
+        super(ViewPlanePerspective, self).__init__(resolution, pixel_size, sampler)
+
+
+    def iter_row(self, row):
+        # axis aligned viewport
+        origin = (0.0, 0.0, 1500)
+        for column in xrange(self.resolution[0]):
+            rays = []
+            for sample in self.sampler.sample(row, column, self.resolution, self.pixel_size):
+                direction = (sample - origin)
+                direction /= numpy.linalg.norm(direction)
+                rays.append(Ray(origin=origin, direction=direction))
+            yield (rays, (column,row))
+
+    def __iter__(self):
+        for row in xrange(self.resolution[1]):
+            yield self.iter_row(row) 
+
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0, sampler=MultiJitteredSampler(sample_dim=2))
+        self.viewplane = ViewPlanePerspective(resolution=(320,200), pixel_size=1.0,
+            sampler=MultiJitteredSampler(sample_dim=3))
         self.background_color = (0.0,0.0,0.0)
         self.objects = []
         # initiate objects
         self.objects.append(Sphere(center=(0.0,0.0,0.0), radius=85.0, color=(1.0,0,0)))
-        self.objects.append(Sphere(center=(50.0,10.0,30.0), radius=85.0, color=(1.0,1.0,0)))
-        self.objects.append(Plane(origin=(0.0,0.0,-10.0), normal=(0,0,1.0), color=(0,0,1.0)))
+        self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
+        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), color=(0,0,1.0)))
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
@@ -129,8 +150,9 @@ class World(object):
             for rays, pixel in row:
                 color = numpy.zeros(3)
                 for ray in rays:
-                    color += tracer.trace_ray(ray)
+                    color += numpy.array(tracer.trace_ray(ray)) ** 2.0
                 color /= len(rays)
+                color ** 0.5
                 im.putpixel(pixel, (int(color[0]*255), int(color[1]*255), int(color[2]*255)))
                 pxarray[pixel[0]][pixel[1]] = (int(color[0]*255), int(color[1]*255), int(color[2]*255))
 
