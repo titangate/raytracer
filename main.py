@@ -105,10 +105,13 @@ class ViewPlanePerspective(ViewPlane):
 
     def iter_row(self, row):
         # axis aligned viewport
-        origin = (0.0, 0.0, 1500)
+        plane_z = 700
+        d = 800
+        origin = (0.0, 0.0, d)
         for column in xrange(self.resolution[0]):
             rays = []
             for sample in self.sampler.sample(row, column, self.resolution, self.pixel_size):
+                sample[2] = plane_z
                 direction = (sample - origin)
                 direction /= numpy.linalg.norm(direction)
                 rays.append(Ray(origin=origin, direction=direction))
@@ -121,13 +124,15 @@ class ViewPlanePerspective(ViewPlane):
 class World(object):
     def __init__(self):
         self.viewplane = ViewPlanePerspective(resolution=(320,200), pixel_size=1.0,
-            sampler=MultiJitteredSampler(sample_dim=3))
+            sampler=RegularSampler())
         self.background_color = (0.0,0.0,0.0)
         self.objects = []
         # initiate objects
-        self.objects.append(Sphere(center=(0.0,0.0,0.0), radius=85.0, color=(1.0,0,0)))
-        self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
-        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), color=(0,0,1.0)))
+        for x in xrange(3):
+            for y in xrange(3):
+                self.objects.append(Sphere(center=(x * 250 - 250,y * 120 - 150,500.0), radius=50.0, color=(x / 3., y / 3., .5)))
+        #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
+        #self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), color=(0,0,1.0)))
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
