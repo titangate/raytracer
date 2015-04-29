@@ -125,6 +125,13 @@ class World(object):
                     if event.key == pygame.K_k:
                         pan -= 50
 
+                    if event.key == pygame.K_u:
+                        self.camera.focal_plane_distance += 100
+                        need_render = True
+                    if event.key == pygame.K_i:
+                        self.camera.focal_plane_distance -= 100
+                        need_render = True
+
                     if yaw != 0 or roll != 0 or pitch != 0 or pan != 0:
                         self.rotate_camera(roll * 0.1, yaw * 0.1, pitch * 0.1)
                         self.move_camera(pan)
