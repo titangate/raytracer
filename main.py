@@ -8,18 +8,36 @@ from sampler import *
 from camera import PinholeCamera
 from tracer import *
 
+import math
+
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = numpy.asarray(axis)
+    theta = numpy.asarray(theta)
+    axis = axis/math.sqrt(numpy.dot(axis, axis))
+    a = math.cos(theta/2)
+    b, c, d = -axis*math.sin(theta/2)
+    aa, bb, cc, dd = a*a, b*b, c*c, d*d
+    bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
+    return numpy.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
+                     [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
+                     [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
+
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1.0,
+        self.viewplane = ViewPlane(resolution=(64,40), pixel_size=5,
             sampler=RegularSampler())
-        self.camera = PinholeCamera(eye=(0,0,800), up=(0,1,0), lookat=(0,0,0), viewing_distance=200)
+        self.camera = PinholeCamera(eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
         self.objects = []
         # initiate objects
         for x in xrange(3):
             for y in xrange(3):
-                self.objects.append(Sphere(center=(x * 250 - 250,y * 120 - 150,500.0), radius=50.0, color=(x / 3., y / 3., .5)))
+                self.objects.append(Sphere(center=(x * 250 - 250.,y * 120 - 150.,500.0), radius=50.0, color=(x / 3., y / 3., .5)))
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
         #self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), color=(0,0,1.0)))
 
@@ -34,6 +52,19 @@ class World(object):
                 shader_rec.color = obj.get_color()
         return hit
 
+    def rotate_camera(self, roll, yaw, pitch):
+        roll_mat = rotation_matrix(self.camera.w, roll)
+        pitch_mat = rotation_matrix(self.camera.u, pitch)
+        yaw_mat = rotation_matrix(self.camera.v, yaw)
+
+        rotation = roll_mat.dot(pitch_mat.dot(yaw_mat))
+        self.camera.w = rotation.dot(self.camera.w)
+        self.camera.u = rotation.dot(self.camera.u)
+        self.camera.v = rotation.dot(self.camera.v)
+
+    def move_camera(self, pan):
+        self.camera.eye += self.camera.w * -pan
+
     def render(self):
         pygame.init()
 
@@ -42,20 +73,60 @@ class World(object):
         im = Image.new("RGB", self.viewplane.resolution)
 
         prev = [-1]
-        def render_pixel(pixel,r,g,b):
+        def render_pixel_offline(pixel,r,g,b):
             im.putpixel(pixel, (r,g,b))
             pxarray[pixel[0]][pixel[1]] = (r,g,b)
             if prev[0] != pixel[1]:
                 prev[0] = pixel[1]
                 pygame.display.flip()
 
-        self.camera.render(self, render_pixel)
-        im.save("render.png", "PNG")
+        def render_pixel_realtime(pixel,r,g,b):
+            pxarray[pixel[0]][pixel[1]] = (r,g,b)
+            if prev[0] != pixel[1]:
+                prev[0] = pixel[1]
 
-        while True: 
-           for event in pygame.event.get(): 
-              if event.type == pygame.QUIT: 
-                  sys.exit(0)
+        
+        #im.save("render.png", "PNG")
+
+        need_render = True
+        while True:
+            for event in pygame.event.get():
+                
+                if event.type == pygame.KEYDOWN:
+                    yaw = 0
+                    roll = 0
+                    pitch = 0
+                    pan = 0
+                    if event.key == pygame.K_d:
+                        yaw -= 1
+                    if event.key == pygame.K_a:
+                        yaw += 1
+
+                    if event.key == pygame.K_w:
+                        pitch -= 1
+                    if event.key == pygame.K_s:
+                        pitch += 1
+
+                    if event.key == pygame.K_q:
+                        roll -= 1
+                    if event.key == pygame.K_e:
+                        roll += 1
+
+                    if event.key == pygame.K_j:
+                        pan += 50
+                    if event.key == pygame.K_k:
+                        pan -= 50
+
+                    if yaw != 0 or roll != 0 or pitch != 0 or pan != 0:
+                        self.rotate_camera(roll * 0.1, yaw * 0.1, pitch * 0.1)
+                        self.move_camera(pan)
+                        need_render = True
+                if event.type == pygame.QUIT: 
+                    sys.exit(0)
+            if need_render:
+                self.camera.render(self, render_pixel_realtime)
+                pygame.display.flip()
+                need_render = False
 
 if __name__ == "__main__":
     w=World()
