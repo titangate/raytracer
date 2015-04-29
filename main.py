@@ -5,7 +5,7 @@ import numpy
 import sys
 import random
 from sampler import *
-from camera import PinholeCamera
+from camera import PinholeCamera, ThinLensCamera
 from tracer import *
 
 import math
@@ -29,15 +29,15 @@ def rotation_matrix(axis, theta):
 class World(object):
     def __init__(self):
         self.viewplane = ViewPlane(resolution=(64,40), pixel_size=5,
-            sampler=RegularSampler())
-        self.camera = PinholeCamera(eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
+            sampler=MultiJitteredSampler())
+        self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=200.0, eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
         self.objects = []
         # initiate objects
         for x in xrange(3):
             for y in xrange(3):
-                self.objects.append(Sphere(center=(x * 250 - 250.,y * 120 - 150.,500.0), radius=50.0, color=(x / 3., y / 3., .5)))
+                self.objects.append(Sphere(center=(x * 250 - 250.,y * 120 - 150., (x+y) * 50 + 250), radius=50.0, color=(x / 3., y / 3., .5)))
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
         #self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), color=(0,0,1.0)))
 

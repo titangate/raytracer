@@ -5,8 +5,14 @@ class RegularSampler(object):
     def sample(self):
         return ((0.5,0.5),)
 
+    def sample_unit_disk(self):
+        return ((0.,0.),)
+
+    def sample_unit_hemisphere_surface(self):
+        return ((1.,0.,0.),)
+
 class MultiJitteredSampler(object):
-    def __init__(self, sample_dim=2, pattern_size=83):
+    def __init__(self, sample_dim=2, pattern_size=83, e=1):
         self.sample_dim = sample_dim
         self.pattern_size = pattern_size
         self.patterns = []
@@ -22,12 +28,7 @@ class MultiJitteredSampler(object):
                     samples.append(((i + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_row[i] / dim, (j + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_col[j] / dim))
             self.patterns.append(samples)
 
-    def sample(self):
-        return random.choice(self.patterns)
 
-class ConcentricMapSampler(MultiJitteredSampler):
-    def __init__(self, *args, **kwargs):
-        super(ConcentricMapSampler, self).__init__(*args, **kwargs)
         concentric_patterns = []
         for samples in self.patterns:
             concentric_samples = []
@@ -53,13 +54,10 @@ class ConcentricMapSampler(MultiJitteredSampler):
                         else:
                             phi = 0
                 phi *= numpy.pi / 4.0
-                concentric_samples.append((r * numpy.cos(phi), r * numpy.sin(phi)))
+                concentric_samples.append(numpy.array(r * numpy.cos(phi), r * numpy.sin(phi)))
             concentric_patterns.append(concentric_samples)
-        self.patterns = concentric_patterns
+        self.concentric_patterns = concentric_patterns
 
-class HemisphereSampler(MultiJitteredSampler):
-    def __init__(self, sample_dim=2, pattern_size=83, e=1):
-        super(HemisphereSampler, self).__init__(sample_dim, pattern_size)
 
         hemisphere_patterns = []
         for samples in self.patterns:
@@ -76,4 +74,13 @@ class HemisphereSampler(MultiJitteredSampler):
 
                 hemisphere_samples.append((pu, pv, pw))
             hemisphere_patterns.append(hemisphere_samples)
-        self.patterns = hemisphere_samples
+        self.hemisphere_patterns = hemisphere_samples
+
+    def sample(self):
+        return random.choice(self.patterns)
+
+    def sample_unit_disk(self):
+        return random.choice(self.concentric_patterns)
+
+    def sample_unit_hemisphere_surface(self):
+        return random.choice(self.hemisphere_patterns)
