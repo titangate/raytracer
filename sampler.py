@@ -2,12 +2,8 @@ import random
 import numpy
 import math
 class RegularSampler(object):
-    def sample(self, row, column, resolution, pixel_size):
-        origin = numpy.zeros(3)
-        origin[0] = pixel_size*(column - resolution[0] / 2 + 0.5)
-        origin[1] = pixel_size*(row - resolution[1] / 2 + 0.5)
-        origin[2] = 1000.0
-        return (origin,)
+    def sample(self):
+        return ((0.5,0.5),)
 
 class MultiJitteredSampler(object):
     def __init__(self, sample_dim=2, pattern_size=83):
@@ -26,15 +22,8 @@ class MultiJitteredSampler(object):
                     samples.append(((i + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_row[i] / dim, (j + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_col[j] / dim))
             self.patterns.append(samples)
 
-    def sample(self, row, column, resolution, pixel_size):
-        rays = []
-        for sample in random.choice(self.patterns):
-            origin = numpy.zeros(3)
-            origin[0] = pixel_size*(column - resolution[0] / 2 + sample[0] )
-            origin[1] = pixel_size*(row - resolution[1] / 2 + sample[1] )
-            origin[2] = 1000.0
-            rays.append(origin)
-        return rays
+    def sample(self):
+        return random.choice(self.patterns)
 
 class ConcentricMapSampler(MultiJitteredSampler):
     def __init__(self, *args, **kwargs):
