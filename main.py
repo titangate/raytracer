@@ -28,8 +28,8 @@ def rotation_matrix(axis, theta):
 
 class World(object):
     def __init__(self):
-        self.viewplane = ViewPlane(resolution=(64,40), pixel_size=5,
-            sampler=MultiJitteredSampler())
+        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1,
+            sampler=MultiJitteredSampler(sample_dim=5))
         self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=200.0, eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
@@ -86,7 +86,6 @@ class World(object):
                 prev[0] = pixel[1]
 
         
-        #im.save("render.png", "PNG")
 
         need_render = True
         while True:
@@ -124,7 +123,8 @@ class World(object):
                 if event.type == pygame.QUIT: 
                     sys.exit(0)
             if need_render:
-                self.camera.render(self, render_pixel_realtime)
+                self.camera.render(self, render_pixel_offline)
+                im.save("render.png", "PNG")
                 pygame.display.flip()
                 need_render = False
 
