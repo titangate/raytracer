@@ -8,6 +8,8 @@ from sampler import *
 from camera import PinholeCamera, ThinLensCamera
 from tracer import *
 
+import argparse
+
 import math
 
 def rotation_matrix(axis, theta):
@@ -148,5 +150,13 @@ class World(object):
                 need_render = False
 
 if __name__ == "__main__":
-    w=World()
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--viewmode', dest='viewmode', action='store',
+                       default="realtime",
+                       help='View mode: realtime or offline')
+
+    args = parser.parse_args()
+
+    w=World(viewmode=args.viewmode)
     w.render()
