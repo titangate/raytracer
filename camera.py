@@ -85,5 +85,5 @@ class ThinLensCamera(PinholeCamera):
 
     def ray_direction(self, plane_point, lens_point):
         focal_plane_hitpoint = plane_point * self.focal_plane_distance / self.viewing_distance;
-        direction = (plane_point[0] - lens_point[0]) * self.u + (plane_point[1] - lens_point[1]) * self.v - self.viewing_distance * self.w
+        direction = (focal_plane_hitpoint[0] - lens_point[0]) * self.u + (focal_plane_hitpoint[1] - lens_point[1]) * self.v - self.focal_plane_distance * self.w
         return direction / numpy.linalg.norm(direction)
