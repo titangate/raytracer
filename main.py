@@ -27,9 +27,18 @@ def rotation_matrix(axis, theta):
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
 class World(object):
-    def __init__(self):
-        self.viewplane = ViewPlane(resolution=(320,200), pixel_size=1,
-            sampler=MultiJitteredSampler(sample_dim=2))
+    def __init__(self, viewmode="realtime"):
+        self.viewmode = viewmode
+        if viewmode == "realtime":
+            resolution = (64,40)
+            pixel_size = 5
+            sampler = MultiJitteredSampler(sample_dim=2)
+        else:
+            resolution = (320,200)
+            pixel_size = 1
+            sampler = MultiJitteredSampler(sample_dim=3)
+        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size,
+            sampler=sampler)
         self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=500.0, eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
@@ -123,8 +132,11 @@ class World(object):
                 if event.type == pygame.QUIT: 
                     sys.exit(0)
             if need_render:
-                self.camera.render(self, render_pixel_offline)
-                im.save("render.png", "PNG")
+                if self.viewmode == "realtime":
+                    self.camera.render(self, render_pixel_realtime)
+                else:
+                    self.camera.render(self, render_pixel_offline)
+                    im.save("render.png", "PNG")
                 pygame.display.flip()
                 need_render = False
 
