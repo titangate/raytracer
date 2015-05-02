@@ -74,7 +74,7 @@ class ThinLensCamera(PinholeCamera):
                     plane_point[0] = pixel_size*(column - resolution[0] / 2 + sample[0])
                     plane_point[1] = pixel_size*(row - resolution[1] / 2 + sample[1])
 
-                    lens_point = self.eye + disk_sample * self.lens_radius
+                    lens_point = self.eye + numpy.array([disk_sample[0], disk_sample[1], 0.0]) * self.lens_radius
 
                     ray_dir = self.ray_direction(plane_point, lens_point)
                     ray = Ray(lens_point, ray_dir)

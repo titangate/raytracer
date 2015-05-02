@@ -30,8 +30,8 @@ class Sphere(object):
                 t = (-b + e) / denom
             if (t > epsilon):
                 normal = (temp + t * ray.direction) / self.radius
-                hit_point = ray.origin + t * ray.direction
-                return ShadeRecord(normal=normal, hit_point=hit_point, tmin=t)
+                local_hit_point = ray.origin + t * ray.direction
+                return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t)
 
         return None    
 
@@ -49,8 +49,8 @@ class Plane(object):
             return None
         t = numpy.dot((self.origin - ray.origin) , self.normal) / numpy.dot(ray.direction, self.normal)
         if t > epsilon:
-            hit_point = ray.origin + t * ray.direction
-            return ShadeRecord(normal=self.normal, hit_point=hit_point, tmin=t)
+            local_hit_point = ray.origin + t * ray.direction
+            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
         else:
             return None
 
@@ -60,8 +60,8 @@ class Ray(object):
         self.direction = numpy.array(direction)
 
 class ShadeRecord(object):
-    def __init__(self, hit_point, normal, tmin):
-        self.hit_point = hit_point
+    def __init__(self, local_hit_point, normal, tmin):
+        self.local_hit_point = local_hit_point
         self.normal = normal
         self.tmin = tmin
 

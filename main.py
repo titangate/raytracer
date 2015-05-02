@@ -34,11 +34,11 @@ class World(object):
         if viewmode == "realtime":
             resolution = (64,40)
             pixel_size = 5
-            sampler = MultiJitteredSampler(sample_dim=2)
+            sampler = RegularSampler()
         else:
             resolution = (320,200)
             pixel_size = 1
-            sampler = MultiJitteredSampler(sample_dim=3)
+            sampler = MultiJitteredSampler(sample_dim=10)
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size,
             sampler=sampler)
         self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=500.0, eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
@@ -61,6 +61,19 @@ class World(object):
                 hit = shader_rec
                 tmin = shader_rec.tmin
                 shader_rec.color = obj.get_color()
+        return hit
+
+    def hit_objects(self, ray):
+
+        tmin = INF
+        hit = None
+        for obj in self.objects:
+            shader_rec = obj.hit(ray)
+            if shader_rec and shader_rec.tmin < tmin:
+                hit = shader_rec
+                tmin = shader_rec.tmin
+                shader_rec.material = obj.get_material()
+                shader_rec.hit_point = ray.origin + tmin * ray.direction
         return hit
 
     def rotate_camera(self, roll, yaw, pitch):

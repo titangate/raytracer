@@ -6,7 +6,8 @@ class RegularSampler(object):
         return ((0.5,0.5),)
 
     def sample_unit_disk(self):
-        return ((0.,0.),)
+        sample = numpy.array((0.,0.))
+        return (sample,)
 
     def sample_unit_hemisphere_surface(self):
         return ((1.,0.,0.),)
