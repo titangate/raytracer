@@ -49,16 +49,22 @@ class World(object):
 
         self.ambient_color = AmbientLight(numpy.array([0.2,0.2,0.2]), 1)
 
-        self.lights = [
-            DirectionLight(numpy.array([1,1,1]),1,numpy.array([0,1,0]))
-        ]
 
         # initiate objects
         for x in xrange(3):
             for y in xrange(3):
-                self.objects.append(Sphere(center=(x * 250 - 250.,y * 120 - 150., (x * 3+y) * 40 + 250), radius=50.0, color=(x / 3., y / 3., .5)))
+                color = numpy.array([x / 3., y / 3., .5])
+                self.objects.append(Sphere(
+                    center=(x * 250 - 250.,y * 120 - 150., (x * 3+y) * 40 + 250),
+                    radius=50.0,
+                    material=Matte(1,color)))
+        self.lights = [
+            DirectionLight(numpy.array([0,1,1]),1,numpy.array([0,1,0])),
+            PointLight( numpy.array([1,0,0]),1,self.objects[-1].center + numpy.array([-100,0,0])),
+        ]
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
-        #self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), color=(0,0,1.0)))
+        #self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), material=Matte(1, numpy.array([1.0,1.0,1.0]))))
+
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF

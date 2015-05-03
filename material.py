@@ -32,14 +32,14 @@ class Matte(object):
 		self.diffuse_brdf = Lambertian(None, kd, cd)
 
 	def set_ka(self, ka):
-		self.ambient_brdf.set_kd(ka)
+		self.ambient_brdf.kd = ka
 
 	def set_kd(self, kd):
-		self.diffuse_brdf.set_kd(kd)
+		self.diffuse_brdf.kd = kd
 
 	def set_cd(self, c):
-		self.ambient_brdf.set_cd(c)
-		self.diffuse_brdf.set_cd(c)
+		self.ambient_brdf.cd = c
+		self.diffuse_brdf.cd = c
 
 	def shade(self, sr):
 		wo = -sr.ray.direction

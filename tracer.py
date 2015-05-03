@@ -3,19 +3,16 @@ from sampler import *
 from material import *
 INF = sys.maxint
 epsilon = 1.0e-7
+default_material = Matte(1, numpy.array([1,1,1]))
 
 class Sphere(object):
-    def __init__(self, center, radius, color):
+    def __init__(self, center, radius, material=default_material):
         self.center = numpy.array(center)
         self.radius = numpy.array(radius)
-        self.color = color
-        self.material = Matte(1, 1)
+        self.material = material
 
     def get_material(self):
         return self.material
-
-    def get_color(self):
-        return self.color
 
     def hit(self, ray):
         temp = ray.origin - self.center
@@ -41,13 +38,14 @@ class Sphere(object):
         return None    
 
 class Plane(object):
-    def __init__(self, origin, normal, color):
+    def __init__(self, origin, normal, material=default_material):
         self.origin = numpy.array(origin)
         self.normal = numpy.array(normal)
-        self.color = color
+        self.material = material
 
-    def get_color(self):
-        return self.color
+    def get_material(self):
+        return self.material
+
     def hit(self, ray):
         # ray is parallel to the plane
         if numpy.dot(ray.direction, self.normal) == 0:
