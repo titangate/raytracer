@@ -55,14 +55,13 @@ class MultiJitteredSampler(object):
                         else:
                             phi = 0
                 phi *= numpy.pi / 4.0
-                concentric_samples.append(numpy.array(r * numpy.cos(phi), r * numpy.sin(phi)))
+                concentric_samples.append(numpy.array([r * numpy.cos(phi), r * numpy.sin(phi)]))
             concentric_patterns.append(concentric_samples)
         self.concentric_patterns = concentric_patterns
 
 
         hemisphere_patterns = []
         for samples in self.patterns:
-            hemisphere_samples = []
             for sample in samples:
                 x, y = sample
                 cos_phi = numpy.cos(2 * numpy.pi * x)
@@ -73,9 +72,8 @@ class MultiJitteredSampler(object):
                 pv = sin_theta * sin_phi
                 pw = cos_theta
 
-                hemisphere_samples.append((pu, pv, pw))
-            hemisphere_patterns.append(hemisphere_samples)
-        self.hemisphere_patterns = hemisphere_samples
+                hemisphere_patterns.append(numpy.array([pu, pv, pw]))
+        self.hemisphere_patterns = hemisphere_patterns
 
     def sample(self):
         return random.choice(self.patterns)

@@ -1,5 +1,6 @@
 import sys
 from sampler import *
+from material import *
 INF = sys.maxint
 epsilon = 1.0e-7
 
@@ -8,6 +9,10 @@ class Sphere(object):
         self.center = numpy.array(center)
         self.radius = numpy.array(radius)
         self.color = color
+        self.material = Matte(1, 1)
+
+    def get_material(self):
+        return self.material
 
     def get_color(self):
         return self.color
@@ -69,10 +74,11 @@ class Tracer(object):
     def __init__(self, world):
         self.world = world
 
-    def trace_ray(self, ray):
-        shader_rec = self.world.hit_bare_bones_objects(ray)
+    def trace_ray(self, ray, depth=0):
+        shader_rec = self.world.hit_objects(ray)
         if shader_rec:
-            return shader_rec.color
+            shader_rec.ray = ray
+            return shader_rec.material.shade(shader_rec)
         else:
             return (0.0,0.0,0.0)
 

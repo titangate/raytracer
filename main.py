@@ -7,6 +7,7 @@ import random
 from sampler import *
 from camera import PinholeCamera, ThinLensCamera
 from tracer import *
+from light import *
 
 import argparse
 
@@ -38,13 +39,20 @@ class World(object):
         else:
             resolution = (320,200)
             pixel_size = 1
-            sampler = MultiJitteredSampler(sample_dim=10)
+            sampler = MultiJitteredSampler(sample_dim=3)
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size,
             sampler=sampler)
         self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=500.0, eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
         self.objects = []
+
+        self.ambient_color = AmbientLight(numpy.array([0.2,0.2,0.2]), 1)
+
+        self.lights = [
+            DirectionLight(numpy.array([1,1,1]),1,numpy.array([0,1,0]))
+        ]
+
         # initiate objects
         for x in xrange(3):
             for y in xrange(3):
@@ -74,6 +82,7 @@ class World(object):
                 tmin = shader_rec.tmin
                 shader_rec.material = obj.get_material()
                 shader_rec.hit_point = ray.origin + tmin * ray.direction
+                shader_rec.world = self
         return hit
 
     def rotate_camera(self, roll, yaw, pitch):

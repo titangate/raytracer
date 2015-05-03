@@ -11,7 +11,7 @@ class AmbientLight(object):
 	def L(self, shader_rec):
 		return self.ls * self.color
 
-def PointLight(object):
+class PointLight(object):
 	def __init__(self, color, ls, location):
 		self.color = color
 		self.ls = ls
@@ -25,7 +25,7 @@ def PointLight(object):
 		return self.ls * self.color
 
 
-def DirectionLight(object):
+class DirectionLight(object):
 	def __init__(self, color, ls, direction):
 		self.color = color
 		self.ls = ls
