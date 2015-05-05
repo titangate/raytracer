@@ -51,19 +51,36 @@ class World(object):
 
 
         # initiate objects
-        for x in xrange(3):
-            for y in xrange(3):
-                color = numpy.array([x / 3., y / 3., .5])
-                self.objects.append(Sphere(
-                    center=(x * 250 - 250.,y * 120 - 150., (x * 3+y) * 40 + 250),
-                    radius=50.0,
-                    material=Matte(1,color)))
+        # for x in xrange(3):
+        #     for y in xrange(3):
+        #         color = numpy.array([x / 3., y / 3., .5])
+        #         self.objects.append(Sphere(
+        #             center=(x * 250 - 250.,y * 120 - 150., (x * 3+y) * 40 + 250),
+        #             radius=50.0,
+        #             material=Matte(1,color)))
         self.lights = [
             DirectionLight(numpy.array([0,1,1]),1,numpy.array([0,1,0])),
-            PointLight( numpy.array([1,0,0]),1,self.objects[-1].center + numpy.array([-100,0,0])),
+            DirectionLight(numpy.array([1,0,0]),1,numpy.array([0,0.707,0.707])),
+            #PointLight(numpy.array([1,0,0]),1,numpy.array([0,-200,300]),2,300),
         ]
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
-        #self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), material=Matte(1, numpy.array([1.0,1.0,1.0]))))
+        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), material=Matte(1, numpy.array([1.0,1.0,1.0]))))
+        self.objects.append(Sphere(
+                    center=(-300, -150, 0),
+                    radius=100.0,
+                    material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
+        self.objects.append(Sphere(
+                    center=(-75, -150, 0),
+                    radius=100.0,
+                    material=Matte(1,numpy.array([0.8,0.8,0.8]))))
+        self.objects.append(Sphere(
+                    center=(75, -150, 0),
+                    radius=100.0,
+                    material=Phong(1,numpy.array([0.8,0.8,0.8]),2)))
+        self.objects.append(Sphere(
+                    center=(300, -150, 0),
+                    radius=100.0,
+                    material=Phong(1,numpy.array([0.8,0.8,0.8]),3)))
 
 
     def hit_bare_bones_objects(self, ray):
