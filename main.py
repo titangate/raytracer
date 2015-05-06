@@ -8,6 +8,7 @@ from sampler import *
 from camera import PinholeCamera, ThinLensCamera
 from tracer import *
 from light import *
+from material import *
 
 import argparse
 
@@ -42,7 +43,7 @@ class World(object):
             sampler = MultiJitteredSampler(sample_dim=3)
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size,
             sampler=sampler)
-        self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=500.0, eye=(0.,0.,800.), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
+        self.camera = ThinLensCamera(lens_radius = 10.0, focal_plane_distance=500.0, eye=(0.,-200.,600.), up=(0.,1.,0.), lookat=(0.,-250.,0.), viewing_distance=200.)
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
         self.objects = []
@@ -59,12 +60,14 @@ class World(object):
         #             radius=50.0,
         #             material=Matte(1,color)))
         self.lights = [
-            DirectionLight(numpy.array([0,1,1]),1,numpy.array([0,1,0])),
-            DirectionLight(numpy.array([1,0,0]),1,numpy.array([0,0.707,0.707])),
-            #PointLight(numpy.array([1,0,0]),1,numpy.array([0,-200,300]),2,300),
+            DirectionLight(numpy.array([0,1,1]),1,numpy.array([0,-0.707,0.707]),True),
+            DirectionLight(numpy.array([1,0,1]),1,numpy.array([0,-0.707,-0.707]),True),
+            DirectionLight(numpy.array([1,1,0]),1,numpy.array([0.707,-0.707,0]),True),
         ]
+
+        #self.lights[2].cast_shadow = True
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
-        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,1,0), material=Matte(1, numpy.array([1.0,1.0,1.0]))))
+        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,-1,0), material=Matte(1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
                     center=(-300, -150, 0),
                     radius=100.0,
@@ -76,11 +79,11 @@ class World(object):
         self.objects.append(Sphere(
                     center=(75, -150, 0),
                     radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),2)))
+                    material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
         self.objects.append(Sphere(
                     center=(300, -150, 0),
                     radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),3)))
+                    material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
 
 
     def hit_bare_bones_objects(self, ray):

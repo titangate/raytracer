@@ -1,12 +1,10 @@
 import sys
 from sampler import *
-from material import *
 INF = sys.maxint
 epsilon = 1.0e-7
-default_material = Matte(1, numpy.array([1,1,1]))
 
 class Sphere(object):
-    def __init__(self, center, radius, material=default_material):
+    def __init__(self, center, radius, material):
         self.center = numpy.array(center)
         self.radius = numpy.array(radius)
         self.material = material
@@ -37,8 +35,28 @@ class Sphere(object):
 
         return None    
 
+    def shadow_hit(self, ray):
+        temp = ray.origin - self.center
+        a = numpy.dot(ray.direction, ray.direction)
+        b = 2.0 * numpy.dot(temp, ray.direction)
+        c = numpy.dot(temp, temp) - self.radius * self.radius
+        disc = b * b - 4.0 * a * c
+        
+        if (disc < 0.0):
+            return False, 0
+        else:
+            e = math.sqrt(disc)
+            denom = 2.0 * a
+            t = (-b - e) / denom
+            # take one of the roots that actually is hit
+            if (not t > epsilon):
+                t = (-b + e) / denom
+            if (t > epsilon):
+                return True, t
+        return False, 0
+
 class Plane(object):
-    def __init__(self, origin, normal, material=default_material):
+    def __init__(self, origin, normal, material):
         self.origin = numpy.array(origin)
         self.normal = numpy.array(normal)
         self.material = material
@@ -56,6 +74,14 @@ class Plane(object):
             return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
         else:
             return None
+
+    def shadow_hit(self, ray):
+        if numpy.dot(ray.direction, self.normal) == 0:
+            return False, 0
+        t = numpy.dot((self.origin - ray.origin) , self.normal) / numpy.dot(ray.direction, self.normal)
+        if t > epsilon:
+            return True, t
+        return False, 0
 
 class Ray(object):
     def __init__(self, origin, direction):

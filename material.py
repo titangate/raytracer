@@ -1,4 +1,5 @@
 import numpy
+from tracer import Ray
 
 class Lambertian(object):
 	def __init__(self, sampler, kd, cd):
@@ -70,7 +71,12 @@ class Matte(object):
 			ndotwi = sr.normal.dot(wi)
 
 			if ndotwi > 0:
-				L += self.diffuse_brdf.f(sr, wo, wi) * light.L(sr) * ndotwi
+				in_shadow = False
+				if light.cast_shadow:
+					shadow_ray = Ray(sr.hit_point, wi)
+					in_shadow = light.in_shadow(shadow_ray, sr)
+				if not in_shadow:
+					L += self.diffuse_brdf.f(sr, wo, wi) * light.L(sr) * ndotwi
 		return L
 
 class Phong(object):
@@ -97,6 +103,11 @@ class Phong(object):
 			ndotwi = sr.normal.dot(wi)
 
 			if ndotwi > 0:
-				L += (self.diffuse_brdf.f(sr, wo, wi) + self.specular_brdf.f(sr, wo, wi)) * light.L(sr) * ndotwi
+				in_shadow = False
+				if light.cast_shadow:
+					shadow_ray = Ray(sr.hit_point, wi)
+					in_shadow = light.in_shadow(shadow_ray, sr)
+				if not in_shadow:
+					L += (self.diffuse_brdf.f(sr, wo, wi) + self.specular_brdf.f(sr, wo, wi)) * light.L(sr) * ndotwi
 		return L
 
