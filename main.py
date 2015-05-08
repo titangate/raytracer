@@ -32,7 +32,13 @@ def rotation_matrix(axis, theta):
 
 
 class World(object):
-    def __init__(self, viewmode="realtime"):
+    def __init__(self, viewmode="realtime", buildfunction="a"):
+        if buildfunction == 'a':
+            self.build_function_a()
+        elif buildfunction == 'b':
+            self.build_function_a()
+
+    def build_function_a(self):
         self.viewmode = viewmode
         if viewmode == "realtime":
             resolution = (64, 40)
@@ -68,7 +74,7 @@ class World(object):
 
         #self.lights[2].cast_shadow = True
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
-        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,-1,0), material=Matte(1,numpy.array([0.8,0.8,0.8]))))
+        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,-1,0), material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
                     center=(-300, -150, 0),
                     radius=100.0,
@@ -76,7 +82,7 @@ class World(object):
         self.objects.append(Sphere(
                     center=(-75, -150, 0),
                     radius=100.0,
-                    material=Matte(1,numpy.array([0.8,0.8,0.8]))))
+                    material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
                     center=(75, -150, 0),
                     radius=100.0,
@@ -85,6 +91,36 @@ class World(object):
                     center=(300, -150, 0),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
+
+    def build_function_b(self):
+        self.viewmode = viewmode
+        if viewmode == "realtime":
+            resolution = (64, 40)
+            pixel_size = 5
+            sampler = RegularSampler()
+        else:
+            resolution = (320, 200)
+            pixel_size = 1
+            sampler = MultiJitteredSampler(sample_dim=3)
+
+        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
+        self.camera = PinholeCamera(eye=(25., 20., 45.), up=(0.,1.,0.), lookat=(0.,1.,0.), viewing_distance=5000.)
+
+        self.background_color = (0.0,0.0,0.0)
+        self.tracer = Tracer(self)
+        self.objects = []
+
+        matte1 = Matte(0.75, 0, numpy.array((1.,1.,0)))  # yellow
+        matte2 = Matte(0.75, 0, numpy.array((1.,1.,1.)))  # white
+
+        occluder = AmbientOccluder(numpy.array((1.,1.,1.)), 1., sampler)
+        self.ambient_color = occluder
+
+        sphere = Sphere(center=numpy.array((1.,1.,1.)), radius=1., material=matte1)
+        self.objects.append(sphere)
+
+        plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
+        self.objects.append(plane)
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
@@ -201,6 +237,9 @@ if __name__ == "__main__":
     parser.add_argument('--viewmode', dest='viewmode', action='store',
                        default="realtime",
                        help='View mode: realtime or offline')
+    parser.add_argument('--buildfunction', dest='buildfunction', action='store',
+                       default="a",
+                       help='Build Function: a or b')
 
     args = parser.parse_args()
 

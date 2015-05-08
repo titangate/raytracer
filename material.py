@@ -49,8 +49,8 @@ class GlossySpecular(object):
 		return numpy.zeros(3)
 
 class Matte(object):
-	def __init__(self, kd, cd):
-		self.ambient_brdf = Lambertian(None, kd, cd)
+	def __init__(self, ka, kd, cd):
+		self.ambient_brdf = Lambertian(None, ka, cd)
 		self.diffuse_brdf = Lambertian(None, kd, cd)
 
 	def set_ka(self, ka):
