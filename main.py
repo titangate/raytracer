@@ -34,11 +34,11 @@ def rotation_matrix(axis, theta):
 class World(object):
     def __init__(self, viewmode="realtime", buildfunction="a"):
         if buildfunction == 'a':
-            self.build_function_a()
+            self.build_function_a(viewmode)
         elif buildfunction == 'b':
-            self.build_function_a()
+            self.build_function_b(viewmode)
 
-    def build_function_a(self):
+    def build_function_a(self, viewmode):
         self.viewmode = viewmode
         if viewmode == "realtime":
             resolution = (64, 40)
@@ -92,19 +92,19 @@ class World(object):
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
 
-    def build_function_b(self):
+    def build_function_b(self, viewmode):
         self.viewmode = viewmode
         if viewmode == "realtime":
-            resolution = (64, 40)
+            resolution = (64, 64)
             pixel_size = 5
             sampler = RegularSampler()
         else:
-            resolution = (320, 200)
-            pixel_size = 1
-            sampler = MultiJitteredSampler(sample_dim=3)
+            resolution = (200, 200)
+            pixel_size = 1.6
+            sampler = MultiJitteredSampler(sample_dim=10)
 
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        self.camera = PinholeCamera(eye=(25., 20., 45.), up=(0.,1.,0.), lookat=(0.,1.,0.), viewing_distance=5000.)
+        self.camera = PinholeCamera(eye=(35., 10., 45.), up=(0.,1.,0.), lookat=(0.,1.,0.), viewing_distance=5000.)
 
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
@@ -121,6 +121,8 @@ class World(object):
 
         plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
         self.objects.append(plane)
+
+        self.lights = []
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
@@ -243,5 +245,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    w=World(viewmode=args.viewmode)
+    w=World(viewmode=args.viewmode, buildfunction=args.buildfunction)
     w.render()

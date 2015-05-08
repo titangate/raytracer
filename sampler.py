@@ -10,7 +10,7 @@ class RegularSampler(object):
         return (sample,)
 
     def sample_unit_hemisphere_surface(self):
-        return ((1.,0.,0.),)
+        return numpy.array((0.,0.,1.))
 
 class MultiJitteredSampler(object):
     def __init__(self, sample_dim=2, pattern_size=83, e=1):

@@ -73,7 +73,7 @@ class AmbientOccluder(object):
 
     def get_direction(self, shader_rec):
         sample = self.sampler.sample_unit_hemisphere_surface()
-        return self.coordinate_system.dot(sample)
+        return self.u * sample[0] + self.v * sample[1] + self.w * sample[2]
 
     def in_shadow(self, ray, shader_rec):
         for obj in shader_rec.world.objects:
@@ -83,12 +83,15 @@ class AmbientOccluder(object):
         return False
 
     def L(self, shader_rec):
+#        import ipdb; ipdb.set_trace()
         w = shader_rec.normal
-        v = w.cross(numpy.array((0.0072, 1.0, 0.0034)))
+        v = numpy.cross(w, numpy.array((0.0072, 1.0, 0.0034)))
         v /= numpy.linalg.norm(v)
-        u = v.cross(w)
+        u = numpy.cross(v, w)
 
-        self.coordinate_system = numpy.concatenate((u,v,w))
+        self.u = u
+        self.v = v
+        self.w = w
 
         shadow_ray = Ray(shader_rec.hit_point, self.get_direction(shader_rec))
 

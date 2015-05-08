@@ -12,7 +12,7 @@ class PinholeCamera(object):
     def compute_uwv(self):
         w = self.eye - self.lookat
         w /= numpy.linalg.norm(w)
-        u = numpy.cross(self.up, w)
+        u = numpy.cross(w, self.up)
         u /= numpy.linalg.norm(u)
         v = numpy.cross(w, u)
 
