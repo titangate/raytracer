@@ -3,7 +3,7 @@ import pygame
 import math
 import numpy
 import sys
-import random
+from geometry import *
 from sampler import *
 from camera import PinholeCamera, ThinLensCamera
 from tracer import *
@@ -12,7 +12,6 @@ from material import *
 
 import argparse
 
-import math
 
 def rotation_matrix(axis, theta):
     """
@@ -37,6 +36,8 @@ class World(object):
             self.build_function_a(viewmode)
         elif buildfunction == 'b':
             self.build_function_b(viewmode)
+        elif buildfunction == 'c':
+            self.build_function_c(viewmode)
 
     def build_function_a(self, viewmode):
         self.viewmode = viewmode
@@ -50,13 +51,13 @@ class World(object):
             sampler = MultiJitteredSampler(sample_dim=3)
 
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        self.camera = ThinLensCamera(lens_radius=10.0, focal_plane_distance=500.0, eye=(0.,-200.,600.), up=(0.,1.,0.), lookat=(0.,-250.,0.), viewing_distance=200.)
+        self.camera = ThinLensCamera(lens_radius=10.0, focal_plane_distance=500.0, eye=(0.,-200.,600.), up=(0.,-1.,0.), lookat=(0.,-250.,0.), viewing_distance=200.)
 
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
         self.objects = []
 
-        self.ambient_color = AmbientLight(numpy.array([0.2,0.2,0.2]), 1)
+        self.ambient_color = AmbientOccluder(numpy.array([0.2,0.2,0.2]), 1, sampler)
 
         # initiate objects
         # for x in xrange(3):
@@ -76,19 +77,19 @@ class World(object):
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
         self.objects.append(Plane(origin=(0.0,25,0), normal=(0,-1,0), material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
-                    center=(-300, -150, 0),
+                    center=(-300, -100, 0),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
         self.objects.append(Sphere(
-                    center=(-75, -150, 0),
+                    center=(-75, -100, 0),
                     radius=100.0,
                     material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
-                    center=(75, -150, 0),
+                    center=(75, -100, 0),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
         self.objects.append(Sphere(
-                    center=(300, -150, 0),
+                    center=(300, -100, 0),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
 
@@ -123,6 +124,51 @@ class World(object):
         self.objects.append(plane)
 
         self.lights = []
+
+    def build_function_c(self, viewmode):
+        self.viewmode = viewmode
+        if viewmode == "realtime":
+            resolution = (64, 64)
+            pixel_size = 5
+            sampler = RegularSampler()
+        else:
+            resolution = (400, 400)
+            pixel_size = 0.8
+            sampler = MultiJitteredSampler(sample_dim=3)
+
+        self.background_color = (0.0,0.0,0.0)
+        self.tracer = AreaLightTracer(self)
+        # self.tracer = Tracer(self)
+        self.objects = []
+
+        emissive = Emissive(2800., numpy.array((1.,1.,1.)))
+
+        self.objects = []
+
+        rectangle = Rectangle(numpy.array((0., 10., -5.)), 0.5, 0.5, numpy.array((0., 0., 1.)), numpy.array((0., 1., 0.)), emissive, sampler)
+        self.objects.append(rectangle)
+
+        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
+        d = (1. / 3) ** 0.5 * 20
+        self.camera = PinholeCamera(eye=(d, d, d), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
+
+        matte1 = Matte(1., 1., numpy.array((1.,1.,0)))  # yellow
+        matte2 = Matte(1., 1., numpy.array((1.,1.,1.)))  # white
+
+        occluder = AmbientLight(numpy.array((1.,1.,1.)), .0)
+        self.ambient_color = occluder
+
+        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte1)
+        self.objects.append(sphere)
+
+        plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
+        self.objects.append(plane)
+
+        self.lights = [
+            # DirectionLight(numpy.array([1,1,1]),1,numpy.array([0., .5, -(3.**2) / 2.]),True)
+            AreaLight(numpy.array([1.,1.,1.]), 0.2, emissive, rectangle)
+        ]
+        #self.objects.append(self.lights)
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
@@ -173,12 +219,19 @@ class World(object):
 
         def render_pixel_offline(pixel,r,g,b):
             im.putpixel(pixel, (r,g,b))
+
+            r = min(r, 255)
+            g = min(g, 255)
+            b = min(b, 255)
             pxarray[pixel[0]][pixel[1]] = (r,g,b)
             if prev[0] != pixel[1]:
                 prev[0] = pixel[1]
                 pygame.display.flip()
 
         def render_pixel_realtime(pixel,r,g,b):
+            r = min(r, 255)
+            g = min(g, 255)
+            b = min(b, 255)
             pxarray[pixel[0]][pixel[1]] = (r,g,b)
             if prev[0] != pixel[1]:
                 prev[0] = pixel[1]

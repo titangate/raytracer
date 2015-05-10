@@ -83,7 +83,6 @@ class AmbientOccluder(object):
         return False
 
     def L(self, shader_rec):
-#        import ipdb; ipdb.set_trace()
         w = shader_rec.normal
         v = numpy.cross(w, numpy.array((0.0072, 1.0, 0.0034)))
         v /= numpy.linalg.norm(v)
@@ -99,3 +98,44 @@ class AmbientOccluder(object):
             return numpy.array((0.1,0.1,0.1)) * self.ls * self.color
         else:
             return self.ls * self.color
+
+
+class AreaLight(object):
+    def __init__(self, color, ls, material, shape, cast_shadow=True):
+        self.color = color
+        self.ls = ls
+        self.material = material
+        self.shape = shape
+        self.cast_shadow = cast_shadow
+
+    def L(self, shader_rec):
+        if self.light_normal.dot(self.wi) < 0.:
+            return self.material.get_Le(shader_rec)
+        else:
+            return numpy.array((0.0,0.0,0.0))
+
+    def get_direction(self, shader_rec):
+        self.sample_point = self.shape.sample()
+        self.light_normal = self.shape.get_normal(self.sample_point)
+        self.wi = self.sample_point - shader_rec.hit_point
+        self.wi /= numpy.linalg.norm(self.wi)
+
+        return self.wi
+
+    def in_shadow(self, ray, shader_rec):
+        d = (self.sample_point - ray.origin).dot(ray.direction)
+        for obj in shader_rec.world.objects:
+            is_hit, t = obj.shadow_hit(ray)
+            if is_hit and t < d:
+                return True
+        return False
+
+    def G(self, shader_rec):
+        ndotd = -self.light_normal.dot(self.wi)
+        d2 = self.sample_point - shader_rec.hit_point
+        d2 = sum(d2 ** 2)
+
+        return ndotd / d2
+
+    def pdf(self, shader_rec):
+        return self.shape.pdf(shader_rec)

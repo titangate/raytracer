@@ -81,9 +81,6 @@ class ThinLensCamera(PinholeCamera):
                     color += numpy.array(tracer.trace_ray(ray)) ** 2.0
                 color /= len(samples)
                 color ** 0.5
-                color[0] = min(color[0], 1.)
-                color[1] = min(color[1], 1.)
-                color[2] = min(color[2], 1.)
                 pixel_func(coord, int(color[0]*255), int(color[1]*255), int(color[2]*255))
 
     def ray_direction(self, plane_point, lens_point):
