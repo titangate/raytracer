@@ -1,6 +1,7 @@
 import numpy
 from tracer import *
 
+
 class PinholeCamera(object):
     def __init__(self, eye, lookat, up, viewing_distance):
         self.eye = numpy.array(eye)
@@ -47,6 +48,7 @@ class PinholeCamera(object):
                 color /= len(samples)
                 color ** 0.5
                 pixel_func(coord, int(color[0]*255), int(color[1]*255), int(color[2]*255))
+
 
 class ThinLensCamera(PinholeCamera):
     def __init__(self, lens_radius, focal_plane_distance, *args, **kwargs):

@@ -1,6 +1,7 @@
 import random
 import numpy
-import math
+
+
 class RegularSampler(object):
     def sample(self):
         return ((0.5,0.5),)
@@ -11,6 +12,7 @@ class RegularSampler(object):
 
     def sample_unit_hemisphere_surface(self):
         return numpy.array((0.,0.,1.))
+
 
 class MultiJitteredSampler(object):
     def __init__(self, sample_dim=2, pattern_size=83, e=1):
@@ -28,7 +30,6 @@ class MultiJitteredSampler(object):
                 for j in xrange(sample_dim):
                     samples.append(((i + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_row[i] / dim, (j + random.uniform(0,1)) / dim ** 2 + idx_to_shuffle_col[j] / dim))
             self.patterns.append(samples)
-
 
         concentric_patterns = []
         for samples in self.patterns:
@@ -58,7 +59,6 @@ class MultiJitteredSampler(object):
                 concentric_samples.append(numpy.array([r * numpy.cos(phi), r * numpy.sin(phi)]))
             concentric_patterns.append(concentric_samples)
         self.concentric_patterns = concentric_patterns
-
 
         hemisphere_patterns = []
         for samples in self.patterns:

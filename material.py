@@ -1,7 +1,11 @@
 import numpy
 from tracer import Ray
 
+
 class Material(object):
+    def __init__(self):
+        self.receives_shadow = True
+
     def get_Le(self):
         return numpy.array((0.,0.,0.))
 
@@ -73,7 +77,6 @@ class Matte(Material):
     def shade(self, sr):
         wo = -sr.ray.direction
         L = self.ambient_brdf.rho(sr, wo) * sr.world.ambient_color.L(sr)
-        #import ipdb; ipdb.set_trace()
         for light in sr.world.lights:
             wi = light.get_direction(sr)
             ndotwi = sr.normal.dot(wi)
@@ -83,7 +86,7 @@ class Matte(Material):
                 if light.cast_shadow:
                     shadow_ray = Ray(sr.hit_point, wi)
                     in_shadow = light.in_shadow(shadow_ray, sr)
-                if not in_shadow:
+                if not in_shadow and self.receives_shadow:
                     L += self.diffuse_brdf.f(sr, wo, wi) * light.L(sr) * ndotwi
         return L
 
@@ -99,7 +102,7 @@ class Matte(Material):
                 if light.cast_shadow:
                     shadow_ray = Ray(sr.hit_point, wi)
                     in_shadow = light.in_shadow(shadow_ray, sr)
-                if not in_shadow:
+                if not in_shadow and self.receives_shadow:
                     L += self.diffuse_brdf.f(sr, wo, wi) * light.L(sr) * ndotwi * light.G(sr) / light.pdf(sr)
         return L
 
@@ -132,7 +135,7 @@ class Phong(Material):
                 if light.cast_shadow:
                     shadow_ray = Ray(sr.hit_point, wi)
                     in_shadow = light.in_shadow(shadow_ray, sr)
-                if not in_shadow:
+                if not in_shadow and self.receives_shadow:
                     L += (self.diffuse_brdf.f(sr, wo, wi) + self.specular_brdf.f(sr, wo, wi)) * light.L(sr) * ndotwi
         return L
 
@@ -148,7 +151,7 @@ class Phong(Material):
                 if light.cast_shadow:
                     shadow_ray = Ray(sr.hit_point, wi)
                     in_shadow = light.in_shadow(shadow_ray, sr)
-                if not in_shadow:
+                if not in_shadow and self.receives_shadow:
                     L += ((self.diffuse_brdf.f(sr, wo, wi) + self.specular_brdf.f(sr, wo, wi))
                           * light.L(sr) * ndotwi * light.G(sr) / light.pdf(sr))
         return L

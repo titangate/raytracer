@@ -8,10 +8,11 @@ epsilon = 1.0e-7
 
 
 class Sphere(object):
-    def __init__(self, center, radius, material):
+    def __init__(self, center, radius, material, sampler=None):
         self.center = numpy.array(center)
         self.radius = numpy.array(radius)
         self.material = material
+        self.sampler = sampler
 
     def get_material(self):
         return self.material
@@ -57,7 +58,16 @@ class Sphere(object):
                 t = (-b + e) / denom
             if (t > epsilon):
                 return True, t
-        return False, 0
+
+    def sample(self):
+        pass
+
+class ConcaveSphere(Sphere):
+    def hit(self, ray):
+        sr = super(ConcaveSphere, self).hit(ray)
+        if sr:
+            sr.normal = -sr.normal
+        return sr
 
 
 class Plane(object):

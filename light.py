@@ -139,3 +139,41 @@ class AreaLight(object):
 
     def pdf(self, shader_rec):
         return self.shape.pdf(shader_rec)
+
+
+class EnvironmentLight(object):
+    def __init__(self, color, ls, material, sampler, cast_shadow=True):
+        self.color = color
+        self.ls = ls
+        self.material = material
+        self.sampler = sampler
+        self.cast_shadow = cast_shadow
+
+    def G(self, shader_rec):
+        return 1.
+
+    def get_direction(self, shader_rec):
+        w = shader_rec.normal
+        v = numpy.cross(w, numpy.array((0.0072, 1.0, 0.0034)))
+        v /= numpy.linalg.norm(v)
+        u = numpy.cross(v, w)
+
+        self.u = u
+        self.v = v
+        self.w = w
+
+        sample = self.sampler.sample_unit_hemisphere_surface()
+        self.wi = self.u * sample[0] + self.v * sample[1] + self.w * sample[2]
+
+        return self.wi
+
+    def L(self, shader_rec):
+        self.material.get_Le(shader_rec)
+
+    # TODO: check for object's cast_shadowness
+    def in_shadow(self, ray, shader_rec):
+        for obj in shader_rec.world.objects:
+            is_hit, t = obj.shadow_hit(ray)
+            if is_hit:
+                return True
+        return False
