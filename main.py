@@ -141,11 +141,11 @@ class World(object):
         # self.tracer = Tracer(self)
         self.objects = []
 
-        emissive = Emissive(2800., numpy.array((1.,1.,1.)))
+        emissive = Emissive(280., numpy.array((1.,1.,1.)))
 
         self.objects = []
 
-        rectangle = Rectangle(numpy.array((0., 10., -5.)), 0.5, 0.5, numpy.array((0., 0., 1.)), numpy.array((0., 1., 0.)), emissive, sampler)
+        rectangle = Rectangle(numpy.array((0., 10., -20.)), 4, 4, numpy.array((0., 0., 1.)), numpy.array((0., 1., 0.)), emissive, sampler)
         self.objects.append(rectangle)
 
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)

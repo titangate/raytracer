@@ -122,8 +122,8 @@ class Rectangle(object):
         if t > epsilon:
             local_hit_point = ray.origin + t * ray.direction
             diff = local_hit_point - self.p0
-            a = diff.dot(self.right)
-            b = diff.dot(self.top)
+            a = numpy.abs(diff.dot(self.right))
+            b = numpy.abs(diff.dot(self.top))
             if a * 2 <= self.a and b * 2 <= self.b:
                 return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
         else:
@@ -136,8 +136,8 @@ class Rectangle(object):
         if t > epsilon:
             local_hit_point = ray.origin + t * ray.direction
             diff = local_hit_point - self.p0
-            a = diff.dot(self.right)
-            b = diff.dot(self.top)
+            a = numpy.abs(diff.dot(self.right))
+            b = numpy.abs(diff.dot(self.top))
             if a * 2 <= self.a and b * 2 <= self.b:
                 return True, t
         return False, 0
