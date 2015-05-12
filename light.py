@@ -168,12 +168,14 @@ class EnvironmentLight(object):
         return self.wi
 
     def L(self, shader_rec):
-        self.material.get_Le(shader_rec)
+        return self.material.get_Le(shader_rec)
 
-    # TODO: check for object's cast_shadowness
     def in_shadow(self, ray, shader_rec):
         for obj in shader_rec.world.objects:
             is_hit, t = obj.shadow_hit(ray)
             if is_hit:
                 return True
         return False
+
+    def pdf(self, shader_rec):
+        return 1.

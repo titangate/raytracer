@@ -178,8 +178,8 @@ class World(object):
             pixel_size = 5
             sampler = RegularSampler()
         else:
-            resolution = (400, 400)
-            pixel_size = 0.8
+            resolution = (200, 200)
+            pixel_size = 1.6
             sampler = MultiJitteredSampler(sample_dim=3)
 
         self.background_color = (0.0,0.0,0.0)
@@ -187,12 +187,12 @@ class World(object):
         # self.tracer = Tracer(self)
         self.objects = []
 
-        emissive = Emissive(1., numpy.array((1.,1.,.5)))
-        emissive.receives_shadow = False
+        emissive = Emissive(1., numpy.array((0.,1.,1.)))
 
         self.objects = []
 
         concave_sphere = ConcaveSphere(numpy.array((0., 0., 0.)), 100000., emissive)
+        concave_sphere.cast_shadow = False
         self.objects.append(concave_sphere)
 
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
@@ -202,17 +202,18 @@ class World(object):
         matte1 = Phong(1., numpy.array((1.,1.,0)), 50)  # yellow
         matte2 = Matte(1., 1., numpy.array((1.,1.,1.)))  # white
 
-        occluder = AmbientOccluder(numpy.array((1.,1.,1.)), 1., sampler)
+        occluder = AmbientOccluder(numpy.array((1.,0.,0.)), .5, sampler)
+        occluder = AmbientLight(numpy.array((1.,1.,1.)), .0)
         self.ambient_color = occluder
 
-        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte1)
+        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte2)
         self.objects.append(sphere)
 
         plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
         self.objects.append(plane)
 
         self.lights = [
-            EnvironmentLight(numpy.array([1.,1.,.5]), 1, emissive, sampler)
+            EnvironmentLight(numpy.array([1.,1.,1.]), 1, emissive, sampler)
         ]
 
     def hit_bare_bones_objects(self, ray):
@@ -263,11 +264,11 @@ class World(object):
         prev = [-1]
 
         def render_pixel_offline(pixel,r,g,b):
-            im.putpixel(pixel, (r,g,b))
 
             r = min(r, 255)
             g = min(g, 255)
             b = min(b, 255)
+            im.putpixel(pixel, (r,g,b))
             pxarray[pixel[0]][pixel[1]] = (r,g,b)
             if prev[0] != pixel[1]:
                 prev[0] = pixel[1]

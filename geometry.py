@@ -7,8 +7,14 @@ INF = sys.maxint
 epsilon = 1.0e-7
 
 
-class Sphere(object):
+class GeometryObject(object):
+    def __init__(self):
+        self.cast_shadow = True
+
+
+class Sphere(GeometryObject):
     def __init__(self, center, radius, material, sampler=None):
+        super(Sphere, self).__init__()
         self.center = numpy.array(center)
         self.radius = numpy.array(radius)
         self.material = material
@@ -41,6 +47,8 @@ class Sphere(object):
         return None
 
     def shadow_hit(self, ray):
+        if not self.cast_shadow:
+            return False, 0
         temp = ray.origin - self.center
         a = numpy.dot(ray.direction, ray.direction)
         b = 2.0 * numpy.dot(temp, ray.direction)
@@ -58,9 +66,11 @@ class Sphere(object):
                 t = (-b + e) / denom
             if (t > epsilon):
                 return True, t
+        return False, 0
 
     def sample(self):
         pass
+
 
 class ConcaveSphere(Sphere):
     def hit(self, ray):
@@ -70,8 +80,9 @@ class ConcaveSphere(Sphere):
         return sr
 
 
-class Plane(object):
+class Plane(GeometryObject):
     def __init__(self, origin, normal, material):
+        super(Plane, self).__init__()
         self.origin = numpy.array(origin)
         self.normal = numpy.array(normal)
         self.material = material
@@ -91,6 +102,8 @@ class Plane(object):
             return None
 
     def shadow_hit(self, ray):
+        if not self.cast_shadow:
+            return False, 0
         if numpy.dot(ray.direction, self.normal) == 0:
             return False, 0
         t = numpy.dot((self.origin - ray.origin), self.normal) / numpy.dot(ray.direction, self.normal)
@@ -99,8 +112,9 @@ class Plane(object):
         return False, 0
 
 
-class Rectangle(object):
+class Rectangle(GeometryObject):
     def __init__(self, p0, a, b, normal, right, material, sampler):
+        super(Rectangle, self).__init__()
         self.p0 = p0
         self.a = a
         self.b = b
@@ -140,6 +154,8 @@ class Rectangle(object):
             return None
 
     def shadow_hit(self, ray):
+        if not self.cast_shadow:
+            return False, 0
         if numpy.dot(ray.direction, self.normal) == 0:
             return False, 0
         t = numpy.dot((self.p0 - ray.origin), self.normal) / numpy.dot(ray.direction, self.normal)

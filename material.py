@@ -12,6 +12,7 @@ class Material(object):
 
 class Lambertian(Material):
     def __init__(self, sampler, kd, cd):
+        super(Lambertian, self).__init__()
         self.sampler = sampler
         self.kd = kd
         self.cd = cd
@@ -39,6 +40,7 @@ class Lambertian(Material):
 
 class GlossySpecular(Material):
     def __init__(self, sampler, ks, cs, exp):
+        super(GlossySpecular, self).__init__()
         self.sampler = sampler
         self.ks = ks
         self.cs = cs
@@ -61,6 +63,7 @@ class GlossySpecular(Material):
 
 class Matte(Material):
     def __init__(self, ka, kd, cd):
+        super(Matte, self).__init__()
         self.ambient_brdf = Lambertian(None, ka, cd)
         self.diffuse_brdf = Lambertian(None, kd, cd)
 
@@ -86,7 +89,7 @@ class Matte(Material):
                 if light.cast_shadow:
                     shadow_ray = Ray(sr.hit_point, wi)
                     in_shadow = light.in_shadow(shadow_ray, sr)
-                if not in_shadow and self.receives_shadow:
+                if not in_shadow:
                     L += self.diffuse_brdf.f(sr, wo, wi) * light.L(sr) * ndotwi
         return L
 
@@ -109,6 +112,7 @@ class Matte(Material):
 
 class Phong(Material):
     def __init__(self, kd, cd, exp):
+        super(Phong, self).__init__()
         self.ambient_brdf = Lambertian(None, kd, cd)
         self.diffuse_brdf = Lambertian(None, kd, cd)
         self.specular_brdf = GlossySpecular(None, kd, cd, exp)
@@ -159,6 +163,7 @@ class Phong(Material):
 
 class Emissive(Material):
     def __init__(self, ls, color):
+        super(Emissive, self).__init__()
         self.ls = ls
         self.color = color
 
