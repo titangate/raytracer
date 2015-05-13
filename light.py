@@ -142,9 +142,7 @@ class AreaLight(object):
 
 
 class EnvironmentLight(object):
-    def __init__(self, color, ls, material, sampler, cast_shadow=True):
-        self.color = color
-        self.ls = ls
+    def __init__(self, material, sampler, cast_shadow=True):
         self.material = material
         self.sampler = sampler
         self.cast_shadow = cast_shadow

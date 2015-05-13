@@ -1,4 +1,3 @@
-from PIL import Image
 import pygame
 import math
 import numpy
@@ -31,7 +30,7 @@ def rotation_matrix(axis, theta):
 
 
 class World(object):
-    def __init__(self, viewmode="realtime", buildfunction="a"):
+    def __init__(self, viewmode="realtime", buildfunction="a", fast=False):
         if buildfunction == 'a':
             self.build_function_a(viewmode)
         elif buildfunction == 'b':
@@ -40,6 +39,7 @@ class World(object):
             self.build_function_c(viewmode)
         elif buildfunction == 'd':
             self.build_function_d(viewmode)
+        self.fast = fast
 
     def build_function_a(self, viewmode):
         self.viewmode = viewmode
@@ -50,10 +50,10 @@ class World(object):
         else:
             resolution = (320, 200)
             pixel_size = 1
-            sampler = MultiJitteredSampler(sample_dim=3)
+            sampler = MultiJitteredSampler(sample_dim=7)
 
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        self.camera = ThinLensCamera(lens_radius=10.0, focal_plane_distance=500.0, eye=(0.,-200.,600.), up=(0.,-1.,0.), lookat=(0.,-250.,0.), viewing_distance=200.)
+        self.camera = ThinLensCamera(lens_radius=20.0, focal_plane_distance=500.0, eye=(0.,-200.,600.), up=(0.,-1.,0.), lookat=(0.,-250.,0.), viewing_distance=200.)
 
         self.background_color = (0.0,0.0,0.0)
         self.tracer = Tracer(self)
@@ -79,19 +79,19 @@ class World(object):
         #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
         self.objects.append(Plane(origin=(0.0,25,0), normal=(0,-1,0), material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
-                    center=(-300, -100, 0),
+                    center=(-300, -100, 100),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
         self.objects.append(Sphere(
-                    center=(-75, -100, 0),
+                    center=(-75, -100, -100),
                     radius=100.0,
                     material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
         self.objects.append(Sphere(
-                    center=(75, -100, 0),
+                    center=(75, -100, 100),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
         self.objects.append(Sphere(
-                    center=(300, -100, 0),
+                    center=(300, -100, -300),
                     radius=100.0,
                     material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
 
@@ -102,8 +102,8 @@ class World(object):
             pixel_size = 5
             sampler = RegularSampler()
         else:
-            resolution = (200, 200)
-            pixel_size = 1.6
+            resolution = (100, 100)
+            pixel_size = 3.2
             sampler = MultiJitteredSampler(sample_dim=10)
 
         self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
@@ -136,7 +136,7 @@ class World(object):
         else:
             resolution = (400, 400)
             pixel_size = 0.8
-            sampler = MultiJitteredSampler(sample_dim=3)
+            sampler = MultiJitteredSampler(sample_dim=7)
 
         self.background_color = (0.0,0.0,0.0)
         self.tracer = AreaLightTracer(self)
@@ -180,14 +180,14 @@ class World(object):
         else:
             resolution = (200, 200)
             pixel_size = 1.6
-            sampler = MultiJitteredSampler(sample_dim=3)
+            sampler = MultiJitteredSampler(sample_dim=5)
 
         self.background_color = (0.0,0.0,0.0)
         self.tracer = AreaLightTracer(self)
         # self.tracer = Tracer(self)
         self.objects = []
 
-        emissive = Emissive(1., numpy.array((0.,1.,1.)))
+        emissive = Emissive(1.5, numpy.array((1.,1.,1.)))
 
         self.objects = []
 
@@ -206,14 +206,14 @@ class World(object):
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .0)
         self.ambient_color = occluder
 
-        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte2)
+        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte1)
         self.objects.append(sphere)
 
         plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
         self.objects.append(plane)
 
         self.lights = [
-            EnvironmentLight(numpy.array([1.,1.,1.]), 1, emissive, sampler)
+            EnvironmentLight(emissive, sampler)
         ]
 
     def hit_bare_bones_objects(self, ray):
@@ -323,7 +323,10 @@ class World(object):
                 if self.viewmode == "realtime":
                     self.camera.render(self, render_pixel_realtime)
                 else:
-                    self.camera.render(self, render_pixel_offline)
+                    if self.fast:
+                        self.camera.render(self, render_pixel_offline)
+                    else:
+                        self.camera.render_progressive(self, render_pixel_offline)
                 window.blit(surface, (0, 0))
                 pygame.display.flip()
                 pygame.image.save(surface, "render.png")
@@ -333,13 +336,15 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--viewmode', dest='viewmode', action='store',
-                       default="realtime",
-                       help='View mode: realtime or offline')
+                        default="realtime",
+                        help='View mode: realtime or offline')
     parser.add_argument('--buildfunction', dest='buildfunction', action='store',
-                       default="a",
-                       help='Build Function: a or b')
+                        default="a",
+                        help='Build Function: a or b')
+    parser.add_argument('--fast', dest="fast", action='store_true',
+                        default=False)
 
     args = parser.parse_args()
 
-    w=World(viewmode=args.viewmode, buildfunction=args.buildfunction)
+    w = World(viewmode=args.viewmode, buildfunction=args.buildfunction, fast=args.fast)
     w.render()
