@@ -258,29 +258,25 @@ class World(object):
         pygame.init()
 
         window = pygame.display.set_mode(self.viewplane.resolution)
-        pxarray = pygame.PixelArray(window)
-        im = Image.new("RGB", self.viewplane.resolution)
+        surface = pygame.Surface(self.viewplane.resolution)
 
         prev = [-1]
 
-        def render_pixel_offline(pixel,r,g,b):
-
+        def render_pixel_offline(pixel, r, g, b):
             r = min(r, 255)
             g = min(g, 255)
             b = min(b, 255)
-            im.putpixel(pixel, (r,g,b))
-            pxarray[pixel[0]][pixel[1]] = (r,g,b)
+            surface.set_at(pixel, (r, g, b))
             if prev[0] != pixel[1]:
                 prev[0] = pixel[1]
+                window.blit(surface, (0, 0))
                 pygame.display.flip()
 
-        def render_pixel_realtime(pixel,r,g,b):
+        def render_pixel_realtime(pixel, r, g, b):
             r = min(r, 255)
             g = min(g, 255)
             b = min(b, 255)
-            pxarray[pixel[0]][pixel[1]] = (r,g,b)
-            if prev[0] != pixel[1]:
-                prev[0] = pixel[1]
+            surface.set_at(pixel, (r, g, b))
 
         need_render = True
         while True:
@@ -328,8 +324,9 @@ class World(object):
                     self.camera.render(self, render_pixel_realtime)
                 else:
                     self.camera.render(self, render_pixel_offline)
-                    im.save("render.png", "PNG")
+                window.blit(surface, (0, 0))
                 pygame.display.flip()
+                pygame.image.save(surface, "render.png")
                 need_render = False
 
 if __name__ == "__main__":
