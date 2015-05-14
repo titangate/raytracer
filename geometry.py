@@ -7,9 +7,174 @@ INF = sys.maxint
 epsilon = 1.0e-7
 
 
+class BoundingBox(object):
+    def __init__(self, x0, x1, y0, y1, z0, z1):
+        self.x0 = x0
+        self.x1 = x1
+        self.y0 = y0
+        self.y1 = y1
+        self.z0 = z0
+        self.z1 = z1
+
+    def hit(self, ray):
+        dx = 1. / ray.direction[0]
+        dy = 1. / ray.direction[1]
+        dz = 1. / ray.direction[2]
+
+        t1 = (self.x0 - ray.origin[0]) * dx
+        t2 = (self.x1 - ray.origin[0]) * dx
+        t3 = (self.y0 - ray.origin[1]) * dy
+        t4 = (self.y1 - ray.origin[1]) * dy
+        t5 = (self.z0 - ray.origin[2]) * dz
+        t6 = (self.z1 - ray.origin[2]) * dz
+
+        tmin = max(min(t1, t2), min(t3, t4), min(t5, t6))
+        tmax = min(max(t1, t2), max(t3, t4), max(t5, t6))
+
+        if tmax < 0:
+            return False
+
+        if tmin > tmax:
+            return False
+
+        return True
+
+
 class GeometryObject(object):
     def __init__(self):
         self.cast_shadow = True
+
+    def get_material(self):
+        return self.material
+
+
+class AxisAlignedBox(GeometryObject):
+    FACE_ARRAY = [numpy.array((-1,0,0)),
+                  numpy.array((0,-1,0)),
+                  numpy.array((0,0,-1)),
+                  numpy.array((1,0,0)),
+                  numpy.array((0,1,0)),
+                  numpy.array((0,0,1)),]
+
+    def __init__(self, x0, x1, y0, y1, z0, z1, material):
+        super(AxisAlignedBox, self).__init__()
+        self.x0 = x0
+        self.x1 = x1
+        self.y0 = y0
+        self.y1 = y1
+        self.z0 = z0
+        self.z1 = z1
+        self.material = material
+
+    def get_face_normal(self, face):
+        return self.FACE_ARRAY[face]
+
+    def hit(self, ray):
+        dx = 1. / ray.direction[0]
+        dy = 1. / ray.direction[1]
+        dz = 1. / ray.direction[2]
+
+        if dx >= 0:
+            tx_min = (self.x0 - ray.origin[0]) * dx
+            tx_max = (self.x1 - ray.origin[0]) * dx
+        else:
+            tx_min = (self.x1 - ray.origin[0]) * dx
+            tx_max = (self.x0 - ray.origin[0]) * dx
+
+        if dy >= 0:
+            ty_min = (self.y0 - ray.origin[1]) * dy
+            ty_max = (self.y1 - ray.origin[1]) * dy
+        else:
+            ty_min = (self.y1 - ray.origin[1]) * dy
+            ty_max = (self.y0 - ray.origin[1]) * dy
+
+        if dz >= 0:
+            tz_min = (self.z0 - ray.origin[2]) * dz
+            tz_max = (self.z1 - ray.origin[2]) * dz
+        else:
+            tz_min = (self.z1 - ray.origin[2]) * dz
+            tz_max = (self.z0 - ray.origin[2]) * dz
+
+        if tx_min > ty_min:
+            t0 = tx_min
+            if dx >= 0:
+                face_in = 0
+            else:
+                face_in = 3
+        else:
+            t0 = ty_min
+            if dy >= 0:
+                face_in = 1
+            else:
+                face_in = 4
+
+        if tz_min > t0:
+            t0 = tz_min
+            if dz >= 0:
+                face_in = 2
+            else:
+                face_in = 5
+
+        if tx_max < ty_max:
+            t1 = tx_max
+            if dx >= 0:
+                face_out = 3
+            else:
+                face_out = 0
+        else:
+            t1 = ty_max
+            if dy >= 0:
+                face_out = 4
+            else:
+                face_out = 1
+
+        if tz_max < t1:
+            t1 = tz_max
+            if dz >= 0:
+                face_out = 5
+            else:
+                face_out = 2
+
+        if t0 < t1 and t1 > epsilon:
+            if t0 > epsilon:
+                tmin = t0
+                normal = self.get_face_normal(face_in)
+            else:
+                tmin = t1
+                normal = self.get_face_normal(face_out)
+
+            local_hit_point = ray.origin + tmin * ray.direction
+
+            tmin = tmin
+            shader_rec = ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=tmin)
+            return shader_rec
+        else:
+            return None
+
+    def shadow_hit(self, ray):
+        if not self.cast_shadow:
+            return False, 0
+        dx = 1. / ray.direction[0]
+        dy = 1. / ray.direction[1]
+        dz = 1. / ray.direction[2]
+
+        t1 = (self.x0 - ray.origin[0]) * dx
+        t2 = (self.x1 - ray.origin[0]) * dx
+        t3 = (self.y0 - ray.origin[1]) * dy
+        t4 = (self.y1 - ray.origin[1]) * dy
+        t5 = (self.z0 - ray.origin[2]) * dz
+        t6 = (self.z1 - ray.origin[2]) * dz
+
+        tmin = max(min(t1, t2), min(t3, t4), min(t5, t6))
+        tmax = min(max(t1, t2), max(t3, t4), max(t5, t6))
+
+        if tmax < epsilon:
+            return False, 0
+
+        if tmin > tmax:
+            return False, 0
+
+        return True, tmin
 
 
 class Sphere(GeometryObject):
@@ -19,9 +184,6 @@ class Sphere(GeometryObject):
         self.radius = numpy.array(radius)
         self.material = material
         self.sampler = sampler
-
-    def get_material(self):
-        return self.material
 
     def hit(self, ray):
         temp = ray.origin - self.center
@@ -87,9 +249,6 @@ class Plane(GeometryObject):
         self.normal = numpy.array(normal)
         self.material = material
 
-    def get_material(self):
-        return self.material
-
     def hit(self, ray):
         # ray is parallel to the plane
         if numpy.dot(ray.direction, self.normal) == 0:
@@ -134,9 +293,6 @@ class Rectangle(GeometryObject):
 
     def get_normal(self, sample_point):
         return self.normal
-
-    def get_material(self):
-        return self.material
 
     def hit(self, ray):
         # ray is parallel to the plane
