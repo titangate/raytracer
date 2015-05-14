@@ -1,14 +1,8 @@
 import pygame
-import math
 import numpy
 import sys
-from geometry import *
-from sampler import *
-from camera import PinholeCamera, ThinLensCamera
-from tracer import *
-from light import *
-from material import *
-
+from geometry import INF
+import buildfunctions
 import argparse
 
 
@@ -19,202 +13,25 @@ def rotation_matrix(axis, theta):
     """
     axis = numpy.asarray(axis)
     theta = numpy.asarray(theta)
-    axis = axis/math.sqrt(numpy.dot(axis, axis))
-    a = math.cos(theta/2)
-    b, c, d = -axis*math.sin(theta/2)
+    axis = axis/numpy.sqrt(numpy.dot(axis, axis))
+    a = numpy.cos(theta/2)
+    b, c, d = -axis*numpy.sin(theta/2)
     aa, bb, cc, dd = a*a, b*b, c*c, d*d
     bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
     return numpy.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
-                     [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
-                     [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
+                       [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
+                       [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
 
 class World(object):
     def __init__(self, viewmode="realtime", buildfunction="a", fast=False):
-        if buildfunction == 'a':
-            self.build_function_a(viewmode)
-        elif buildfunction == 'b':
-            self.build_function_b(viewmode)
-        elif buildfunction == 'c':
-            self.build_function_c(viewmode)
-        elif buildfunction == 'd':
-            self.build_function_d(viewmode)
+        fcn = buildfunctions.buildfunctionbase.BuildFunctionBase.get_build_function(buildfunction)
+        if fcn:
+            fcn(self, viewmode)
+        else:
+            print 'No Buildfunction found! Make sure a buildfunction file exists under buildfunctions/'
+            sys.exit()
         self.fast = fast
-
-    def build_function_a(self, viewmode):
-        self.viewmode = viewmode
-        if viewmode == "realtime":
-            resolution = (64, 40)
-            pixel_size = 5
-            sampler = RegularSampler()
-        else:
-            resolution = (320, 200)
-            pixel_size = 1
-            sampler = MultiJitteredSampler(sample_dim=7)
-
-        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        self.camera = ThinLensCamera(lens_radius=20.0, focal_plane_distance=500.0, eye=(0.,-200.,600.), up=(0.,-1.,0.), lookat=(0.,-250.,0.), viewing_distance=200.)
-
-        self.background_color = (0.0,0.0,0.0)
-        self.tracer = Tracer(self)
-        self.objects = []
-
-        self.ambient_color = AmbientOccluder(numpy.array([0.2,0.2,0.2]), 1, sampler)
-
-        # initiate objects
-        # for x in xrange(3):
-        #     for y in xrange(3):
-        #         color = numpy.array([x / 3., y / 3., .5])
-        #         self.objects.append(Sphere(
-        #             center=(x * 250 - 250.,y * 120 - 150., (x * 3+y) * 40 + 250),
-        #             radius=50.0,
-        #             material=Matte(1,color)))
-        self.lights = [
-            DirectionLight(numpy.array([0,1,1]),1,numpy.array([0,-0.707,0.707]),True),
-            DirectionLight(numpy.array([1,0,1]),1,numpy.array([0,-0.707,-0.707]),True),
-            DirectionLight(numpy.array([1,1,0]),1,numpy.array([0.707,-0.707,0]),True),
-        ]
-
-        #self.lights[2].cast_shadow = True
-        #self.objects.append(Sphere(center=(50.0,10.0,500.0), radius=85.0, color=(1.0,1.0,0)))
-        self.objects.append(Plane(origin=(0.0,25,0), normal=(0,-1,0), material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
-        self.objects.append(Sphere(
-                    center=(-300, -100, 100),
-                    radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
-        self.objects.append(Sphere(
-                    center=(-75, -100, -100),
-                    radius=100.0,
-                    material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
-        self.objects.append(Sphere(
-                    center=(75, -100, 100),
-                    radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
-        self.objects.append(Sphere(
-                    center=(300, -100, -300),
-                    radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
-
-    def build_function_b(self, viewmode):
-        self.viewmode = viewmode
-        if viewmode == "realtime":
-            resolution = (64, 64)
-            pixel_size = 5
-            sampler = RegularSampler()
-        else:
-            resolution = (100, 100)
-            pixel_size = 3.2
-            sampler = MultiJitteredSampler(sample_dim=10)
-
-        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        self.camera = PinholeCamera(eye=(35., 10., 45.), up=(0.,1.,0.), lookat=(0.,1.,0.), viewing_distance=5000.)
-
-        self.background_color = (0.0,0.0,0.0)
-        self.tracer = Tracer(self)
-        self.objects = []
-
-        matte1 = Matte(0.75, 0, numpy.array((1.,1.,0)))  # yellow
-        matte2 = Matte(0.75, 0, numpy.array((1.,1.,1.)))  # white
-
-        occluder = AmbientOccluder(numpy.array((1.,1.,1.)), 1., sampler)
-        self.ambient_color = occluder
-
-        sphere = Sphere(center=numpy.array((1.,1.,1.)), radius=1., material=matte1)
-        self.objects.append(sphere)
-
-        plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
-        self.objects.append(plane)
-
-        self.lights = []
-
-    def build_function_c(self, viewmode):
-        self.viewmode = viewmode
-        if viewmode == "realtime":
-            resolution = (64, 64)
-            pixel_size = 5
-            sampler = RegularSampler()
-        else:
-            resolution = (400, 400)
-            pixel_size = 0.8
-            sampler = MultiJitteredSampler(sample_dim=7)
-
-        self.background_color = (0.0,0.0,0.0)
-        self.tracer = AreaLightTracer(self)
-        # self.tracer = Tracer(self)
-        self.objects = []
-
-        emissive = Emissive(120., numpy.array((1.,1.,1.)))
-
-        self.objects = []
-
-        rectangle = Rectangle(numpy.array((0., 10., -20.)), 4, 4, numpy.array((0., 0., 1.)), numpy.array((0., 1., 0.)), emissive, sampler)
-        self.objects.append(rectangle)
-
-        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        d = (1. / 3) ** 0.5 * 20
-        self.camera = PinholeCamera(eye=(d, d, d), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
-
-        matte1 = Phong(1., numpy.array((1.,1.,0)), 50)  # yellow
-        matte2 = Matte(1., 1., numpy.array((1.,1.,1.)))  # white
-
-        occluder = AmbientLight(numpy.array((1.,1.,1.)), .0)
-        self.ambient_color = occluder
-
-        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte1)
-        self.objects.append(sphere)
-
-        plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
-        self.objects.append(plane)
-
-        self.lights = [
-            # DirectionLight(numpy.array([1,1,1]),1,numpy.array([0., .5, -(3.**2) / 2.]),True)
-            AreaLight(numpy.array([1.,1.,1.]), 1, emissive, rectangle)
-        ]
-
-    def build_function_d(self, viewmode):
-        self.viewmode = viewmode
-        if viewmode == "realtime":
-            resolution = (64, 64)
-            pixel_size = 5
-            sampler = RegularSampler()
-        else:
-            resolution = (200, 200)
-            pixel_size = 1.6
-            sampler = MultiJitteredSampler(sample_dim=5)
-
-        self.background_color = (0.0,0.0,0.0)
-        self.tracer = AreaLightTracer(self)
-        # self.tracer = Tracer(self)
-        self.objects = []
-
-        emissive = Emissive(1.5, numpy.array((1.,1.,1.)))
-
-        self.objects = []
-
-        concave_sphere = ConcaveSphere(numpy.array((0., 0., 0.)), 100000., emissive)
-        concave_sphere.cast_shadow = False
-        self.objects.append(concave_sphere)
-
-        self.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        d = (1. / 3) ** 0.5 * 20
-        self.camera = PinholeCamera(eye=(d, d, d), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
-
-        matte1 = Phong(1., numpy.array((1.,1.,0)), 50)  # yellow
-        matte2 = Matte(1., 1., numpy.array((1.,1.,1.)))  # white
-
-        occluder = AmbientOccluder(numpy.array((1.,0.,0.)), .5, sampler)
-        occluder = AmbientLight(numpy.array((1.,1.,1.)), .0)
-        self.ambient_color = occluder
-
-        sphere = Sphere(center=numpy.array((0., 2.5, 5)), radius=5., material=matte1)
-        self.objects.append(sphere)
-
-        plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
-        self.objects.append(plane)
-
-        self.lights = [
-            EnvironmentLight(emissive, sampler)
-        ]
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
@@ -267,7 +84,7 @@ class World(object):
             g = min(g, 255)
             b = min(b, 255)
             surface.set_at(pixel, (r, g, b))
-            if prev[0] != pixel[1]:
+            if numpy.abs(prev[0] - pixel[1]) > 10:
                 prev[0] = pixel[1]
                 window.blit(surface, (0, 0))
                 pygame.display.flip()
