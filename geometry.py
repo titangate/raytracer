@@ -1,7 +1,8 @@
 import numpy
 import sys
 import random
-from tracer import ShadeRecord
+import affinetransform as transform
+from tracer import ShadeRecord, Ray
 
 INF = sys.maxint
 epsilon = 1.0e-7
@@ -43,9 +44,40 @@ class BoundingBox(object):
 class GeometryObject(object):
     def __init__(self):
         self.cast_shadow = True
+        self.inv_transform = None
 
     def get_material(self):
         return self.material
+
+
+class Instance(GeometryObject):
+    def __init__(self, obj, transform):
+        self.obj = obj
+        self.set_transform(transform)
+
+    def set_transform(self, transform):
+        self.inv_transform = numpy.linalg.inv(transform)
+
+    def get_material(self):
+        return self.obj.get_material()
+
+    def inv_ray(self, ray):
+        origin = transform.apply(self.inv_transform, ray.origin)
+        direction = transform.apply(self.inv_transform, ray.direction)
+
+        return Ray(origin=origin, direction=direction)
+
+    def hit(self, ray):
+        # import ipdb; ipdb.set_trace()
+        inv_ray = self.inv_ray(ray)
+        hit = self.obj.hit(inv_ray)
+        if hit:
+            hit.normal = transform.apply(self.inv_transform.transpose(), hit.normal)
+        return hit
+
+    def shadow_hit(self, ray):
+        inv_ray = self.inv_ray(ray)
+        return self.obj.shadow_hit(inv_ray)
 
 
 class AxisAlignedBox(GeometryObject):
@@ -335,6 +367,8 @@ class Triangle(GeometryObject):
         self.material = material
 
     def shadow_hit(self, ray):
+        if not self.cast_shadow:
+            return False, 0
         d = self.v1 - self.v0
         e = self.v2 - self.v0
         f = self.v0 - ray.origin

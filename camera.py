@@ -4,8 +4,9 @@ from tracer import *
 
 class Camera(object):
     def break_if_needed(self, world, row, column):
-        if column == world.breakon[0] and row == world.breakon[1]:
-            import ipdb; ipdb.set_trace()
+        if world.breakon:
+            if column == world.breakon[0] and row == world.breakon[1]:
+                import ipdb; ipdb.set_trace()
 
 
 class PinholeCamera(Camera):

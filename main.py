@@ -146,11 +146,16 @@ if __name__ == "__main__":
     parser.add_argument('--fast', dest="fast", action='store_true',
                         default=False)
     parser.add_argument('--breakon', dest='breakon', action='store',
-                        default="a",
+                        default=None,
                         help='break on a pixel. e.g: 100,200')
 
     args = parser.parse_args()
 
+    breakon = None
+
+    if args.breakon:
+        breakon = map(int,args.breakon.split(','))
+
     w = World(viewmode=args.viewmode, buildfunction=args.buildfunction, fast=args.fast,
-              breakon=map(int,args.breakon.split(',')))
+              breakon=breakon)
     w.render()
