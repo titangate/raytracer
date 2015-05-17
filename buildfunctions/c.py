@@ -29,7 +29,7 @@ class BuildFunction(BuildFunctionBase):
         # world.tracer = Tracer(world)
         world.objects = []
 
-        emissive = Emissive(120., numpy.array((1.,1.,1.)))
+        emissive = Emissive(4.8, numpy.array((1.,1.,1.)))
 
         world.objects = []
 
@@ -53,6 +53,5 @@ class BuildFunction(BuildFunctionBase):
         world.objects.append(plane)
 
         world.lights = [
-            # DirectionLight(numpy.array([1,1,1]),1,numpy.array([0., .5, -(3.**2) / 2.]),True)
-            AreaLight(numpy.array([1.,1.,1.]), 1, emissive, rectangle)
+            AreaLight(emissive, rectangle, 5.)
         ]

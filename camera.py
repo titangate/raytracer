@@ -2,7 +2,13 @@ import numpy
 from tracer import *
 
 
-class PinholeCamera(object):
+class Camera(object):
+    def break_if_needed(self, world, row, column):
+        if column == world.breakon[0] and row == world.breakon[1]:
+            import ipdb; ipdb.set_trace()
+
+
+class PinholeCamera(Camera):
     def __init__(self, eye, lookat, up, viewing_distance):
         self.eye = numpy.array(eye)
         self.lookat = numpy.array(lookat)
@@ -35,6 +41,7 @@ class PinholeCamera(object):
         for row in vp:
             for coord in row:
                 column, row = coord
+                self.break_if_needed(world, row, column)
                 color = numpy.zeros(3)
                 samples = vp.sampler.sample()
                 for sample in samples:
@@ -75,6 +82,7 @@ class PinholeCamera(object):
             print 'iteration ' + str(sample_count)
             for row, row_el in enumerate(coords):
                 for col, samples in enumerate(row_el):
+                    self.break_if_needed(world, row, col)
                     color = numpy.zeros(3)
                     sample = coords[row][col][sample_idx]
                     plane_point = numpy.zeros(3)
@@ -106,6 +114,7 @@ class ThinLensCamera(PinholeCamera):
         for row in vp:
             for coord in row:
                 column, row = coord
+                self.break_if_needed(world, row, column)
                 color = numpy.zeros(3)
                 samples = vp.sampler.sample()
                 disk_samples = vp.sampler.sample_unit_disk()
@@ -152,6 +161,7 @@ class ThinLensCamera(PinholeCamera):
             print 'iteration ' + str(sample_count)
             for row, row_el in enumerate(coords):
                 for col, samples in enumerate(row_el):
+                    self.break_if_needed(world, row, col)
                     color = numpy.zeros(3)
                     sample, disk_sample = coords[row][col][sample_idx]
                     plane_point = numpy.zeros(3)

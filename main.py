@@ -24,7 +24,7 @@ def rotation_matrix(axis, theta):
 
 
 class World(object):
-    def __init__(self, viewmode="realtime", buildfunction="a", fast=False):
+    def __init__(self, viewmode="realtime", buildfunction="a", fast=False, breakon=None):
         fcn = buildfunctions.buildfunctionbase.BuildFunctionBase.get_build_function(buildfunction)
         if fcn:
             fcn(self, viewmode)
@@ -32,6 +32,7 @@ class World(object):
             print 'No Buildfunction found! Make sure a buildfunction file exists under buildfunctions/'
             sys.exit()
         self.fast = fast
+        self.breakon = breakon
 
     def hit_bare_bones_objects(self, ray):
         tmin = INF
@@ -160,8 +161,12 @@ if __name__ == "__main__":
                         help='Build Function: a or b')
     parser.add_argument('--fast', dest="fast", action='store_true',
                         default=False)
+    parser.add_argument('--breakon', dest='breakon', action='store',
+                        default="a",
+                        help='break on a pixel. e.g: 100,200')
 
     args = parser.parse_args()
 
-    w = World(viewmode=args.viewmode, buildfunction=args.buildfunction, fast=args.fast)
+    w = World(viewmode=args.viewmode, buildfunction=args.buildfunction, fast=args.fast,
+              breakon=map(int,args.breakon.split(',')))
     w.render()

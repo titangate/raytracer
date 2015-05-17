@@ -342,9 +342,7 @@ class Triangle(GeometryObject):
         m = numpy.array((d,e,-ray.direction)).transpose()
         r = numpy.linalg.solve(m, -f)
         alpha, beta, tmin = r
-        # import ipdb; ipdb.set_trace()
         if alpha > epsilon and beta > epsilon and tmin > epsilon and alpha + beta < 1:
-            # import ipdb; ipdb.set_trace()
             return True, tmin
 
         return False, 0
@@ -357,7 +355,6 @@ class Triangle(GeometryObject):
         m = numpy.array((d,e,-ray.direction)).transpose()
         r = numpy.linalg.solve(m, -f)
         alpha, beta, t = r
-        # import ipdb; ipdb.set_trace()
         if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
             local_hit_point = ray.origin + t * ray.direction
             return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)

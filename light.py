@@ -101,10 +101,9 @@ class AmbientOccluder(object):
 
 
 class AreaLight(object):
-    def __init__(self, color, ls, material, shape, cast_shadow=True):
-        self.color = color
-        self.ls = ls
+    def __init__(self, material, shape, radius, cast_shadow=True):
         self.material = material
+        self.radius = radius
         self.shape = shape
         self.cast_shadow = cast_shadow
 
@@ -133,9 +132,9 @@ class AreaLight(object):
     def G(self, shader_rec):
         ndotd = -self.light_normal.dot(self.wi)
         d2 = self.sample_point - shader_rec.hit_point
-        d2 = sum(d2 ** 2)
+        d2 = sum(d2 ** 2) / self.radius ** 2
 
-        return ndotd / d2
+        return ndotd / max(1., d2)
 
     def pdf(self, shader_rec):
         return self.shape.pdf(shader_rec)
