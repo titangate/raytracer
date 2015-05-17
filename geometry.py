@@ -323,3 +323,43 @@ class Rectangle(GeometryObject):
             if a * 2 <= self.a and b * 2 <= self.b:
                 return True, t
         return False, 0
+
+
+class Triangle(GeometryObject):
+    def __init__(self, v0, v1, v2, material):
+        self.v0 = v0
+        self.v1 = v1
+        self.v2 = v2
+        self.normal = numpy.cross(v2 - v0, v1 - v0)
+        self.normal /= numpy.linalg.norm(self.normal)
+        self.material = material
+
+    def shadow_hit(self, ray):
+        d = self.v1 - self.v0
+        e = self.v2 - self.v0
+        f = self.v0 - ray.origin
+
+        m = numpy.array((d,e,-ray.direction)).transpose()
+        r = numpy.linalg.solve(m, -f)
+        alpha, beta, tmin = r
+        # import ipdb; ipdb.set_trace()
+        if alpha > epsilon and beta > epsilon and tmin > epsilon and alpha + beta < 1:
+            # import ipdb; ipdb.set_trace()
+            return True, tmin
+
+        return False, 0
+
+    def hit(self, ray):
+        d = self.v1 - self.v0
+        e = self.v2 - self.v0
+        f = self.v0 - ray.origin
+
+        m = numpy.array((d,e,-ray.direction)).transpose()
+        r = numpy.linalg.solve(m, -f)
+        alpha, beta, t = r
+        # import ipdb; ipdb.set_trace()
+        if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
+            local_hit_point = ray.origin + t * ray.direction
+            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
+
+        return None
