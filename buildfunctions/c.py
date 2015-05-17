@@ -26,7 +26,6 @@ class BuildFunction(BuildFunctionBase):
 
         world.background_color = (0.0,0.0,0.0)
         world.tracer = AreaLightTracer(world)
-        # world.tracer = Tracer(world)
         world.objects = []
 
         emissive = Emissive(4.8, numpy.array((1.,1.,1.)))

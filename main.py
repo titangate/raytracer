@@ -4,23 +4,7 @@ import sys
 from geometry import INF
 import buildfunctions
 import argparse
-
-
-def rotation_matrix(axis, theta):
-    """
-    Return the rotation matrix associated with counterclockwise rotation about
-    the given axis by theta radians.
-    """
-    axis = numpy.asarray(axis)
-    theta = numpy.asarray(theta)
-    axis = axis/numpy.sqrt(numpy.dot(axis, axis))
-    a = numpy.cos(theta/2)
-    b, c, d = -axis*numpy.sin(theta/2)
-    aa, bb, cc, dd = a*a, b*b, c*c, d*d
-    bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
-    return numpy.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
-                       [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
-                       [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
+import affinetransform as transform
 
 
 class World(object):
@@ -60,14 +44,14 @@ class World(object):
         return hit
 
     def rotate_camera(self, roll, yaw, pitch):
-        roll_mat = rotation_matrix(self.camera.w, roll)
-        pitch_mat = rotation_matrix(self.camera.u, pitch)
-        yaw_mat = rotation_matrix(self.camera.v, yaw)
+        roll_mat = transform.rotate(self.camera.w, roll)
+        pitch_mat = transform.rotate(self.camera.u, pitch)
+        yaw_mat = transform.rotate(self.camera.v, yaw)
 
         rotation = roll_mat.dot(pitch_mat.dot(yaw_mat))
-        self.camera.w = rotation.dot(self.camera.w)
-        self.camera.u = rotation.dot(self.camera.u)
-        self.camera.v = rotation.dot(self.camera.v)
+        self.camera.w = transform.apply(rotation, self.camera.w)
+        self.camera.u = transform.apply(rotation, self.camera.u)
+        self.camera.v = transform.apply(rotation, self.camera.v)
 
     def move_camera(self, pan):
         self.camera.eye += self.camera.w * -pan
