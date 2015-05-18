@@ -57,13 +57,14 @@ class Instance(GeometryObject):
 
     def set_transform(self, transform):
         self.inv_transform = numpy.linalg.inv(transform)
+        self.inv_normal_transform = numpy.linalg.inv(transform[:3, :3])
 
     def get_material(self):
         return self.obj.get_material()
 
     def inv_ray(self, ray):
         origin = transform.apply(self.inv_transform, ray.origin)
-        direction = transform.apply(self.inv_transform, ray.direction)
+        direction = transform.apply_normal(self.inv_normal_transform, ray.direction)
 
         return Ray(origin=origin, direction=direction)
 
@@ -72,7 +73,7 @@ class Instance(GeometryObject):
         inv_ray = self.inv_ray(ray)
         hit = self.obj.hit(inv_ray)
         if hit:
-            hit.normal = transform.apply(self.inv_transform.transpose(), hit.normal)
+            hit.normal = transform.apply_normal(self.inv_normal_transform.transpose(), hit.normal)
         return hit
 
     def shadow_hit(self, ray):

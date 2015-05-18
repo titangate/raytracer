@@ -39,3 +39,7 @@ def translate(x, y, z):
 
 def apply(mat, vec):
     return mat.dot(numpy.concatenate((vec,[1.])))[:3]
+
+
+def apply_normal(mat, vec):
+    return mat.dot(vec)
