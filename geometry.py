@@ -360,10 +360,11 @@ class Rectangle(GeometryObject):
 
 class Triangle(GeometryObject):
     def __init__(self, v0, v1, v2, material):
+        super(Triangle, self).__init__()
         self.v0 = v0
         self.v1 = v1
         self.v2 = v2
-        self.normal = numpy.cross(v2 - v0, v1 - v0)
+        self.normal = numpy.cross(v1 - v0, v2 - v0)
         self.normal /= numpy.linalg.norm(self.normal)
         self.material = material
 
@@ -393,5 +394,72 @@ class Triangle(GeometryObject):
         if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
             local_hit_point = ray.origin + t * ray.direction
             return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
+
+        return None
+
+
+class Mesh(GeometryObject):
+    def __init__(self, vertices, indices, material=None):
+        super(Mesh, self).__init__()
+        self.vertices = vertices
+        self.indices = indices
+        self.normals = []
+        self.material = material
+
+        self.compute_normal()
+
+    def get_vertices(self, indices):
+        for idx in indices:
+            yield (self.vertices[i] for i in idx)
+
+    def compute_normal(self):
+        for v0, v1, v2 in self.get_vertices(self.indices):
+            normal = numpy.cross(v1 - v0, v2 - v0)
+            normal /= numpy.linalg.norm(normal)
+            self.normals.append(normal)
+
+    def compute_smooth_normal(self):
+        pass
+
+    def shadow_hit(self, ray):
+        for v0, v1, v2 in self.get_vertices(self.indices):
+            if self.shadow_hit_indices(ray, v0, v1, v2):
+                return True
+        return False
+
+    def hit(self, ray):
+        sr = None
+        for i, vertices in enumerate(self.get_vertices(self.indices)):
+            v0, v1, v2 = vertices
+            n_sr = self.hit_indices(ray, v0, v1, v2, self.normals[i])
+            if n_sr:
+                if sr is None or sr.tmin > n_sr.tmin:
+                    sr = n_sr
+        return sr
+
+    def shadow_hit_indices(self, ray, v0, v1, v2):
+        d = v1 - v0
+        e = v2 - v0
+        f = v0 - ray.origin
+
+        m = numpy.array((d,e,-ray.direction)).transpose()
+        r = numpy.linalg.solve(m, -f)
+        alpha, beta, tmin = r
+        if alpha > epsilon and beta > epsilon and tmin > epsilon and alpha + beta < 1:
+            return True, tmin
+
+        return False, 0
+
+    def hit_indices(self, ray, v0, v1, v2, normal):
+        d = v1 - v0
+        e = v2 - v0
+        f = v0 - ray.origin
+
+        m = numpy.array((d,e,-ray.direction)).transpose()
+        r = numpy.linalg.solve(m, -f)
+        alpha, beta, t = r
+        if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
+            local_hit_point = ray.origin + t * ray.direction
+            return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t)
 
         return None

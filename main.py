@@ -133,6 +133,7 @@ class World(object):
                 pygame.display.flip()
                 pygame.image.save(surface, "render.png")
                 need_render = False
+                print 'render complete!'
 
 if __name__ == "__main__":
 
