@@ -41,7 +41,6 @@ class KDTree(GeometryObject):
         if bounding_boxes.max_y - bounding_boxes.min_y > max_diff:
             axis = 'y'
         # right now naively return the center idx
-        print 'dividing on %s, with %d items' % (axis, len(bounding_boxes.x_boxes))
         return axis, len(bounding_boxes.x_boxes) / 2
 
     def print_tree(self, depth=0):
@@ -89,7 +88,6 @@ class KDTree(GeometryObject):
             else:
                 self.split_idx = 2
             self.split_center = center
-            print len(left), len(right), len(bounding_boxes.x_boxes)
 
             if not left or not right:
                 self.leaf_items = bounding_boxes.x_boxes
@@ -132,10 +130,11 @@ class KDTree(GeometryObject):
     def shadow_hit(self, ray):
         for node in self.iterate_nodes(ray):
             for box in node.leaf_items:
-                if box.obj.shadow_hit(ray):
-                    return True
+                hit, t = box.obj.shadow_hit(ray)
+                if hit:
+                    return True, t
 
-        return False
+        return False, -1
 
     def hit(self, ray):
         sr = None
