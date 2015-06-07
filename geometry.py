@@ -9,13 +9,23 @@ epsilon = 1.0e-7
 
 
 class BoundingBox(object):
-    def __init__(self, x0, x1, y0, y1, z0, z1):
+    def __init__(self, x0, x1, y0, y1, z0, z1, obj):
         self.x0 = x0
         self.x1 = x1
         self.y0 = y0
         self.y1 = y1
         self.z0 = z0
         self.z1 = z1
+        self.obj = obj
+
+    def get_mid_x(self):
+        return (self.x0 + self.x1) / 2
+
+    def get_mid_y(self):
+        return (self.y0 + self.y1) / 2
+
+    def get_mid_z(self):
+        return (self.z0 + self.z1) / 2
 
     def hit(self, ray):
         dx = 1. / ray.direction[0]
@@ -39,6 +49,9 @@ class BoundingBox(object):
             return False
 
         return True
+
+    def __str__(self):
+        return "BoudingBox: (%f, %f), (%f, %f), (%f, %f)" % (self.x0, self.x1, self.y0, self.y1, self.z0, self.z1)
 
 
 class GeometryObject(object):
@@ -237,7 +250,7 @@ class Sphere(GeometryObject):
             if (t > epsilon):
                 normal = (temp + t * ray.direction) / self.radius
                 local_hit_point = ray.origin + t * ray.direction
-                return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t)
+                return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
 
         return None
 
@@ -289,7 +302,7 @@ class Plane(GeometryObject):
         t = numpy.dot((self.origin - ray.origin), self.normal) / numpy.dot(ray.direction, self.normal)
         if t > epsilon:
             local_hit_point = ray.origin + t * ray.direction
-            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
+            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
         else:
             return None
 
@@ -338,7 +351,7 @@ class Rectangle(GeometryObject):
             a = numpy.abs(diff.dot(self.right))
             b = numpy.abs(diff.dot(self.top))
             if a * 2 <= self.a and b * 2 <= self.b:
-                return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
+                return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
         else:
             return None
 
@@ -393,9 +406,19 @@ class Triangle(GeometryObject):
         alpha, beta, t = r
         if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
             local_hit_point = ray.origin + t * ray.direction
-            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t)
+            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
 
         return None
+
+    def get_bounding_boxes(self):
+        v0, v1, v2 = self.v0, self.v1, self.v2
+        min_x = min(v0[0], v1[0], v2[0])
+        min_y = min(v0[1], v1[1], v2[1])
+        min_z = min(v0[2], v1[2], v2[2])
+        max_x = max(v0[0], v1[0], v2[0])
+        max_y = max(v0[1], v1[1], v2[1])
+        max_z = max(v0[2], v1[2], v2[2])
+        return [BoundingBox(min_x, max_x, min_y, max_y, min_z, max_z, self)]
 
 
 class Mesh(GeometryObject):
@@ -460,6 +483,15 @@ class Mesh(GeometryObject):
         alpha, beta, t = r
         if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
             local_hit_point = ray.origin + t * ray.direction
-            return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t)
+            return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
 
         return None
+
+    def get_bounding_boxes(self):
+        boxes = []
+        for i, vertices in enumerate(self.get_vertices(self.indices)):
+            v0, v1, v2 = vertices
+            triangle = Triangle(v0, v1, v2, self.material)
+            triangle.cast_shadow = self.cast_shadow
+            boxes.extend(triangle.get_bounding_boxes())
+        return boxes

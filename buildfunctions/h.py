@@ -1,5 +1,4 @@
 from sampler import RegularSampler, MultiJitteredSampler
-from geometry import Plane, Triangle, Mesh
 from tracer import ViewPlane, Tracer
 from material import Matte
 from light import AmbientLight, PointLight
@@ -37,7 +36,6 @@ class BuildFunction(BuildFunctionBase):
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        import ipdb; ipdb.set_trace()
         mesh = read_mesh(open('meshes/mesh1.obj'))
         mesh.material = matte2
         world.objects.append(mesh)

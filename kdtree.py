@@ -3,7 +3,6 @@ from geometry import BoundingBox, GeometryObject
 
 class BoundingBoxes(object):
     def __init__(self, boxes):
-        # a box is in the form: x, y, z, w/2, d/2, h/2, object
         self.x_boxes = sorted(boxes, key=lambda box:box.get_mid_x())
         self.y_boxes = sorted(boxes, key=lambda box:box.get_mid_y())
         self.z_boxes = sorted(boxes, key=lambda box:box.get_mid_z())
@@ -22,12 +21,15 @@ class BoundingBoxes(object):
 
 
 class KDTree(GeometryObject):
-    def __init__(self, bounding_boxes):
+    def __init__(self, bounding_boxes, leaf=False):
         super(KDTree, self).__init__()
         self.left = None
         self.right = None
         self.leaf_items = None
-        self.sub_divide(bounding_boxes)
+        if leaf:
+            self.leaf_items = bounding_boxes.x_boxes
+        else:
+            self.sub_divide(bounding_boxes)
         self.bounding_box = bounding_boxes.get_bounding_box()
 
     def find_division_point(self, bounding_boxes):
@@ -52,54 +54,70 @@ class KDTree(GeometryObject):
             if axis == 'x':
                 center_x = bounding_boxes.x_boxes[idx].x0
                 for box in bounding_boxes.x_boxes:
-                    if box.x0 > center_x:
+                    if box.x1 > center_x:
                         right.append(box)
-                    if box.x1 <= center_x:
+                    if box.x0 <= center_x:
                         left.append(box)
             elif axis == 'y':
                 center_y = bounding_boxes.y_boxes[idx].y0
                 for box in bounding_boxes.y_boxes:
-                    if box.y0 > center_y:
+                    if box.y1 > center_y:
                         right.append(box)
-                    if box.y1 <= center_y:
+                    if box.y0 <= center_y:
                         left.append(box)
             elif axis == 'z':
                 center_z = bounding_boxes.z_boxes[idx].z0
                 for box in bounding_boxes.z_boxes:
-                    if box.z0 > center_z:
+                    if box.z1 > center_z:
                         right.append(box)
-                    if box.z1 <= center_z:
+                    if box.z0 <= center_z:
                         left.append(box)
+
+            print len(left), len(right), len(bounding_boxes.x_boxes)
 
             if not left or not right:
                 self.leaf_items = bounding_boxes.x_boxes
             elif len(set(left).intersection(right)) > len(bounding_boxes.x_boxes) / 2:
                 self.leaf_items = bounding_boxes.x_boxes
             else:
-                self.left = KDTree(BoundingBoxes(left))
-                self.right = KDTree(BoundingBoxes(right))
+                if len(left) == len(bounding_boxes.x_boxes):
+                    self.left = KDTree(BoundingBoxes(left), leaf=True)
+                else:
+                    self.left = KDTree(BoundingBoxes(left))
+                if len(right) == len(bounding_boxes.x_boxes):
+                    self.right = KDTree(BoundingBoxes(right), leaf=True)
+                else:
+                    self.right = KDTree(BoundingBoxes(right))
+
+    def find_all_potential_colliders(self, ray):
+        if not self.bounding_box.hit(ray):
+            return set()
+        result = set()
+        if self.leaf_items:
+            for box in self.leaf_items:
+                if box.hit(ray):
+                    result.add(box.obj)
+        else:
+            result = result.union(self.left.find_all_potential_colliders(ray))
+            result = result.union(self.right.find_all_potential_colliders(ray))
+        return result
 
     def shadow_hit(self, ray):
-        if not self.bounding_box.hit(ray):
-            return False
-        if self.leaf_items:
-            for box in self.leaf_items:
-                return box.obj.hit(ray)
-        else:
-            return self.left.shadow_hit(ray) or self.right.shadow_hit(ray)
+        objs = self.find_all_potential_colliders(ray)
+
+        for obj in objs:
+            if obj.shadow_hit(ray):
+                return True
+
+        return False
 
     def hit(self, ray):
-        if not self.bounding_box.hit(ray):
-            return None
+        objs = self.find_all_potential_colliders(ray)
+
         sr = None
-        if self.leaf_items:
-            for box in self.leaf_items:
-                n_sr = box.obj.hit(ray)
-                if sr is None or n_sr is not None and sr.tmin > n_sr.tmin:
-                    sr = n_sr
-        else:
-            sr = self.left.hit(ray)
-            n_sr = self.right.hit(ray)
-            if sr is None or n_sr is not None and sr.tmin > n_sr.tmin:
+        for obj in objs:
+            n_sr = obj.hit(ray)
+            if sr is None or (n_sr is not None and sr.tmin > n_sr.tmin):
                 sr = n_sr
+
         return sr

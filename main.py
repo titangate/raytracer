@@ -5,6 +5,7 @@ from geometry import INF
 import buildfunctions
 import argparse
 import affinetransform as transform
+import time
 
 
 class World(object):
@@ -38,7 +39,6 @@ class World(object):
             if shader_rec and shader_rec.tmin < tmin:
                 hit = shader_rec
                 tmin = shader_rec.tmin
-                shader_rec.material = obj.get_material()
                 shader_rec.hit_point = ray.origin + tmin * ray.direction
                 shader_rec.world = self
         return hit
@@ -63,6 +63,7 @@ class World(object):
         surface = pygame.Surface(self.viewplane.resolution)
 
         prev = [-1]
+        last_time = [time.time()]
 
         def render_pixel_offline(pixel, r, g, b):
             r = min(r, 255)
@@ -72,6 +73,8 @@ class World(object):
             if numpy.abs(prev[0] - pixel[1]) > 10:
                 prev[0] = pixel[1]
                 window.blit(surface, (0, 0))
+                print 'time elapsed: %.2f' % (time.time() - last_time[0])
+                last_time[0] = time.time()
                 pygame.display.flip()
 
         def render_pixel_realtime(pixel, r, g, b):

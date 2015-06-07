@@ -11,10 +11,11 @@ class Ray(object):
 
 
 class ShadeRecord(object):
-    def __init__(self, local_hit_point, normal, tmin):
+    def __init__(self, local_hit_point, normal, tmin, material=None):
         self.local_hit_point = local_hit_point
         self.normal = normal
         self.tmin = tmin
+        self.material = material
 
 
 class Tracer(object):
