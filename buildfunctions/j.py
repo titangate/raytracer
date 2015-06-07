@@ -11,7 +11,7 @@ from kdtree import BoundingBoxes, KDTree
 
 class BuildFunction(BuildFunctionBase):
 
-    BUILD_FUNCTION_NAME = 'h'
+    BUILD_FUNCTION_NAME = 'j'
 
     @classmethod
     def build_function(cls, world, viewmode):
@@ -26,7 +26,7 @@ class BuildFunction(BuildFunctionBase):
             sampler = MultiJitteredSampler(sample_dim=2)
 
         world.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        world.camera = PinholeCamera(eye=(5., 2., -7.), up=(0.,1.,0.), lookat=(0.,.5,0.), viewing_distance=700.)
+        world.camera = PinholeCamera(eye=(5., 2., -7.), up=(0.,1.,0.), lookat=(0.,.5,0.), viewing_distance=300.)
 
         world.background_color = (0.0,0.0,0.0)
         world.tracer = Tracer(world)
@@ -37,11 +37,12 @@ class BuildFunction(BuildFunctionBase):
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        mesh = read_mesh(open('meshes/mesh1.obj'))
+        mesh = read_mesh(open('meshes/teapot.obj'))
         mesh.material = matte2
         boxes = mesh.get_bounding_boxes()
         tree = KDTree(BoundingBoxes(boxes))
-        world.objects.append(mesh)
+        world.objects.append(tree)
+        tree.print_tree()
 
         world.lights = [
             PointLight(numpy.array((1.,1.,1.)), 1., numpy.array((1., 2., 2.)), radius=4, attenuation=2, cast_shadow=False)

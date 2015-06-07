@@ -43,12 +43,12 @@ class BoundingBox(object):
         tmax = min(max(t1, t2), max(t3, t4), max(t5, t6))
 
         if tmax < 0:
-            return False
+            return False, tmin, tmax
 
         if tmin > tmax:
-            return False
+            return False, tmin, tmax
 
-        return True
+        return True, tmin, tmax
 
     def __str__(self):
         return "BoudingBox: (%f, %f), (%f, %f), (%f, %f)" % (self.x0, self.x1, self.y0, self.y1, self.z0, self.z1)
@@ -452,12 +452,14 @@ class Mesh(GeometryObject):
 
     def hit(self, ray):
         sr = None
+        triangle_hit = None
         for i, vertices in enumerate(self.get_vertices(self.indices)):
             v0, v1, v2 = vertices
             n_sr = self.hit_indices(ray, v0, v1, v2, self.normals[i])
             if n_sr:
                 if sr is None or sr.tmin > n_sr.tmin:
                     sr = n_sr
+                    triangle_hit = i
         return sr
 
     def shadow_hit_indices(self, ray, v0, v1, v2):
@@ -492,6 +494,7 @@ class Mesh(GeometryObject):
         for i, vertices in enumerate(self.get_vertices(self.indices)):
             v0, v1, v2 = vertices
             triangle = Triangle(v0, v1, v2, self.material)
+            triangle.label = str(i)
             triangle.cast_shadow = self.cast_shadow
             boxes.extend(triangle.get_bounding_boxes())
         return boxes

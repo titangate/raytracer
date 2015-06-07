@@ -70,12 +70,12 @@ class World(object):
             g = min(g, 255)
             b = min(b, 255)
             surface.set_at(pixel, (r, g, b))
-            if numpy.abs(prev[0] - pixel[1]) > 10:
+            if numpy.abs(prev[0] - pixel[1]) > 5:
                 prev[0] = pixel[1]
                 window.blit(surface, (0, 0))
+                pygame.display.flip()
                 print 'time elapsed: %.2f' % (time.time() - last_time[0])
                 last_time[0] = time.time()
-                pygame.display.flip()
 
         def render_pixel_realtime(pixel, r, g, b):
             r = min(r, 255)
