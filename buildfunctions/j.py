@@ -21,12 +21,12 @@ class BuildFunction(BuildFunctionBase):
             pixel_size = 5
             sampler = RegularSampler()
         else:
-            resolution = (200, 200)
-            pixel_size = 1.6
-            sampler = MultiJitteredSampler(sample_dim=2)
+            resolution = (400, 400)
+            pixel_size = 0.8
+            sampler = MultiJitteredSampler(sample_dim=1)
 
         world.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
-        world.camera = PinholeCamera(eye=(5., 2., -7.), up=(0.,1.,0.), lookat=(0.,.5,0.), viewing_distance=300.)
+        world.camera = PinholeCamera(eye=(5., 2., 7.), up=(0.,1.,0.), lookat=(0.,1.5,0.), viewing_distance=100.)
 
         world.background_color = (0.0,0.0,0.0)
         world.tracer = Tracer(world)
@@ -37,7 +37,7 @@ class BuildFunction(BuildFunctionBase):
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        mesh = read_mesh(open('meshes/teapot.obj'))
+        mesh = read_mesh(open('meshes/dragon.obj'))
         mesh.material = matte2
         boxes = mesh.get_bounding_boxes()
         tree = KDTree(BoundingBoxes(boxes))
@@ -45,5 +45,5 @@ class BuildFunction(BuildFunctionBase):
         tree.print_tree()
 
         world.lights = [
-            PointLight(numpy.array((1.,1.,1.)), 1., numpy.array((1., 2., 2.)), radius=4, attenuation=2, cast_shadow=False)
+            PointLight(numpy.array((1.,1.,1.)), 1., numpy.array((1., 2., 2.)), radius=10, attenuation=2, cast_shadow=False)
         ]
