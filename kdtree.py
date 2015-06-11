@@ -90,7 +90,8 @@ class KDTree(GeometryObject):
             self.right.print_tree(depth + 1)
 
     def sub_divide(self, bounding_boxes, min_d, max_d):
-        if len(bounding_boxes.x_boxes) <= 50:
+        print len(bounding_boxes.x_boxes)
+        if len(bounding_boxes.x_boxes) <= 20:
             self.leaf_items = bounding_boxes.x_boxes
         else:
             best_cost = INF
@@ -103,19 +104,17 @@ class KDTree(GeometryObject):
                 dim_a = max_d[(axis + 1) % 3] - min_d[(axis + 1) % 3]
                 dim_b = max_d[(axis + 2) % 3] - min_d[(axis + 2) % 3]
                 cost *= dim_a * dim_b
-                print cost,
                 if cost < best_cost:
                     best_cost = cost
                     self.split_idx = axis
                     self.split_center = split_center
                     left = cur_left
                     right = cur_right
-                print ''
 
             if not left or not right:
                 self.leaf_items = bounding_boxes.x_boxes
-            elif len(set(left).intersection(right)) > len(bounding_boxes.x_boxes) / 2:
-                self.leaf_items = bounding_boxes.x_boxes
+            # elif len(set(left).intersection(right)) > len(bounding_boxes.x_boxes) / 2:
+            #     self.leaf_items = bounding_boxes.x_boxes
             else:
                 max_d_left = max_d[:]
                 max_d_left[self.split_idx] = self.split_center
