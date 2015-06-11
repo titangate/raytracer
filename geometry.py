@@ -447,6 +447,7 @@ class Mesh(GeometryObject):
         self.indices = indices
         self.normals = []
         self.material = material
+        self.vertices_normal = None
 
         self.compute_normal()
 
@@ -461,7 +462,17 @@ class Mesh(GeometryObject):
             self.normals.append(normal)
 
     def compute_smooth_normal(self):
-        pass
+        self.vertices_normal = [numpy.array([0., 0., 0.]) for i in xrange(len(self.vertices))]
+        idx = 0
+        for v0, v1, v2 in self.indices:
+            normal = self.normals[idx]
+            self.vertices_normal[v0] += normal
+            self.vertices_normal[v1] += normal
+            self.vertices_normal[v2] += normal
+
+            idx += 1
+        for normal in self.vertices_normal:
+            normal /= numpy.linalg.norm(normal)
 
     def shadow_hit(self, ray):
         for v0, v1, v2 in self.get_vertices(self.indices):
@@ -471,14 +482,16 @@ class Mesh(GeometryObject):
 
     def hit(self, ray):
         sr = None
-        triangle_hit = None
-        for i, vertices in enumerate(self.get_vertices(self.indices)):
-            v0, v1, v2 = vertices
-            n_sr = self.hit_indices(ray, v0, v1, v2, self.normals[i])
+        for i, idx in enumerate(self.indices):
+            v0, v1, v2 = (self.vertices[i] for i in idx)
+            if self.vertices_normal is None:
+                n_sr = self.hit_indices(ray, v0, v1, v2, self.normals[i])
+            else:
+                n1, n2, n3 = (self.vertices_normal[i] for i in idx)
+                n_sr = self.hit_indices_smooth(ray, v0, v1, v2, n1, n2, n3)
             if n_sr:
                 if sr is None or sr.tmin > n_sr.tmin:
                     sr = n_sr
-                    triangle_hit = i
         return sr
 
     def shadow_hit_indices(self, ray, v0, v1, v2):
@@ -503,6 +516,21 @@ class Mesh(GeometryObject):
         r = numpy.linalg.solve(m, -f)
         alpha, beta, t = r
         if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
+            local_hit_point = ray.origin + t * ray.direction
+            return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
+
+        return None
+
+    def hit_indices_smooth(self, ray, v0, v1, v2, n0, n1, n2):
+        d = v1 - v0
+        e = v2 - v0
+        f = v0 - ray.origin
+
+        m = numpy.array((d,e,-ray.direction)).transpose()
+        r = numpy.linalg.solve(m, -f)
+        alpha, beta, t = r
+        if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
+            normal = (1 - alpha - beta) * n0 + alpha * n1 + beta * n2
             local_hit_point = ray.origin + t * ray.direction
             return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
 
