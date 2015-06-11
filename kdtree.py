@@ -47,6 +47,8 @@ def SAH(array, axis, min_d, max_d):
             best_right = split_idx
             split_center = plane
 
+    split_center = min(max_d, max(split_center, min_d))
+
     return best_cost, x0_sorted_array[:best_left], array[best_right:], split_center
 
 
@@ -88,7 +90,7 @@ class KDTree(GeometryObject):
             self.right.print_tree(depth + 1)
 
     def sub_divide(self, bounding_boxes, min_d, max_d):
-        if len(bounding_boxes.x_boxes) <= 4:
+        if len(bounding_boxes.x_boxes) <= 50:
             self.leaf_items = bounding_boxes.x_boxes
         else:
             best_cost = INF
@@ -98,12 +100,17 @@ class KDTree(GeometryObject):
                 cost, cur_left, cur_right, split_center = (
                     SAH(bounding_boxes.x_boxes, axis, min_d[axis], max_d[axis])
                 )
+                dim_a = max_d[(axis + 1) % 3] - min_d[(axis + 1) % 3]
+                dim_b = max_d[(axis + 2) % 3] - min_d[(axis + 2) % 3]
+                cost *= dim_a * dim_b
+                print cost,
                 if cost < best_cost:
                     best_cost = cost
                     self.split_idx = axis
                     self.split_center = split_center
                     left = cur_left
                     right = cur_right
+                print ''
 
             if not left or not right:
                 self.leaf_items = bounding_boxes.x_boxes
@@ -114,6 +121,7 @@ class KDTree(GeometryObject):
                 max_d_left[self.split_idx] = self.split_center
                 min_d_right = min_d[:]
                 min_d_right[self.split_idx] = self.split_center
+
                 if len(left) == len(bounding_boxes.x_boxes):
                     self.left = KDTree(BoundingBoxes(left), leaf=True, max_d=max_d_left, min_d=min_d)
                 else:
