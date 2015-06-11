@@ -10,13 +10,32 @@ epsilon = 1.0e-7
 
 class BoundingBox(object):
     def __init__(self, x0, x1, y0, y1, z0, z1, obj):
-        self.x0 = x0
-        self.x1 = x1
-        self.y0 = y0
-        self.y1 = y1
-        self.z0 = z0
-        self.z1 = z1
+        self.data = [[x0, x1], [y0, y1], [z0, z1]]
         self.obj = obj
+
+    @property
+    def x0(self):
+        return self.data[0][0]
+
+    @property
+    def x1(self):
+        return self.data[0][1]
+
+    @property
+    def y0(self):
+        return self.data[1][0]
+
+    @property
+    def y1(self):
+        return self.data[1][1]
+
+    @property
+    def z0(self):
+        return self.data[2][0]
+
+    @property
+    def z1(self):
+        return self.data[2][1]
 
     def get_mid_x(self):
         return (self.x0 + self.x1) / 2

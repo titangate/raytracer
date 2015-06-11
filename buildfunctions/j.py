@@ -39,10 +39,11 @@ class BuildFunction(BuildFunctionBase):
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        mesh = read_mesh(open('meshes/dragon.obj'))
+        mesh = read_mesh(open('meshes/teapot.obj'))
         mesh.material = matte1
         boxes = mesh.get_bounding_boxes()
         tree = KDTree(BoundingBoxes(boxes))
+        tree.print_tree()
         world.objects.append(tree)
 
         plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte2)
