@@ -40,7 +40,6 @@ class BuildFunction(BuildFunctionBase):
         world.ambient_color = occluder
 
         mesh = read_mesh(open('meshes/teapot.obj'))
-        import ipdb; ipdb.set_trace()
         mesh.compute_smooth_normal()
         mesh.material = matte1
         boxes = mesh.get_bounding_boxes()

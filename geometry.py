@@ -399,6 +399,9 @@ class Triangle(GeometryObject):
         self.normal = numpy.cross(v1 - v0, v2 - v0)
         self.normal /= numpy.linalg.norm(self.normal)
         self.material = material
+        self.n0 = None
+        self.n1 = None
+        self.n2 = None
 
     def shadow_hit(self, ray):
         if not self.cast_shadow:
@@ -425,7 +428,11 @@ class Triangle(GeometryObject):
         alpha, beta, t = r
         if alpha > epsilon and beta > epsilon and t > epsilon and alpha + beta < 1:
             local_hit_point = ray.origin + t * ray.direction
-            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
+            if self.n0 is None:
+                normal = self.normal
+            else:
+                normal = (1 - alpha - beta) * self.n0 + alpha * self.n1 + beta * self.n2
+            return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
 
         return None
 
@@ -484,11 +491,7 @@ class Mesh(GeometryObject):
         sr = None
         for i, idx in enumerate(self.indices):
             v0, v1, v2 = (self.vertices[i] for i in idx)
-            if self.vertices_normal is None:
-                n_sr = self.hit_indices(ray, v0, v1, v2, self.normals[i])
-            else:
-                n1, n2, n3 = (self.vertices_normal[i] for i in idx)
-                n_sr = self.hit_indices_smooth(ray, v0, v1, v2, n1, n2, n3)
+            n_sr = self.hit_indices(ray, v0, v1, v2, self.normals[i])
             if n_sr:
                 if sr is None or sr.tmin > n_sr.tmin:
                     sr = n_sr
@@ -538,9 +541,12 @@ class Mesh(GeometryObject):
 
     def get_bounding_boxes(self):
         boxes = []
-        for i, vertices in enumerate(self.get_vertices(self.indices)):
-            v0, v1, v2 = vertices
+        for i, idx in enumerate(self.indices):
+            v0, v1, v2 = (self.vertices[i] for i in idx)
+            n0, n1, n2 = (self.vertices_normal[i] for i in idx)
             triangle = Triangle(v0, v1, v2, self.material)
+            if self.vertices_normal:
+                triangle.n0, triangle.n1, triangle.n2 = n0, n1, n2
             triangle.label = str(i)
             triangle.cast_shadow = self.cast_shadow
             boxes.extend(triangle.get_bounding_boxes())
