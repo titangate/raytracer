@@ -57,6 +57,46 @@ class PinholeCamera(Camera):
                 color ** 0.5
                 pixel_func(coord, int(color[0]*255), int(color[1]*255), int(color[2]*255))
 
+    def render_pixels(self, world, pixel_plane_point_pairs):
+        colors = []
+        for pixel, plane_point in pixel_plane_point_pairs:
+            ray_dir = self.ray_direction(plane_point)
+            ray = Ray(self.eye, ray_dir)
+            color = world.tracer.trace_ray(ray)
+            colors += [(pixel, int(color[0]*255), int(color[1]*255), int(color[2]*255))]
+        return colors
+
+    def get_pixel_plane_point_pairs(self, world, chunk_size):
+        vp = world.viewplane
+        pixel_size = vp.pixel_size
+        resolution = vp.resolution
+
+        coords = []
+        for row_el in vp:
+            coords.append([])
+            for coord in row_el:
+                samples = vp.sampler.sample()
+                coords[-1].append(samples)
+
+        results = []
+
+        sample_to_hit = range(len(samples))
+        random.shuffle(sample_to_hit)
+        sample_count = 0
+        for sample_idx in sample_to_hit:
+            sample_count += 1
+            for row, row_el in enumerate(coords):
+                for col, samples in enumerate(row_el):
+                    sample = coords[row][col][sample_idx]
+                    plane_point = numpy.zeros(3)
+                    plane_point[0] = pixel_size * (col - resolution[0] / 2 + sample[0])
+                    plane_point[1] = pixel_size * (row - resolution[1] / 2 + sample[1])
+                    results.append(((col, row), (plane_point),))
+                    if len(results) >= chunk_size:
+                        yield results
+                        results = []
+        yield results
+
     def render_progressive(self, world, pixel_func):
         vp = world.viewplane
         tracer = world.tracer

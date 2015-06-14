@@ -67,15 +67,28 @@ class World(object):
         last_time = [time.time()]
 
         pixel_queue = Queue()
+        job_queue = Queue()
+
+        total_pixel_count = [0]
 
         def render_parallize():
-            def dispatch_job(pixel_queue, dimension, process_id):
-                def render_pixel_dispatch(pixel, r, g, b):
-                    pixel_queue.put([pixel, r, g, b, process_id])
-                self.camera.render_progressive(self, render_pixel_dispatch)
+            def dispatch_job(pixel_queue, job_queue, process_id):
+                # def render_pixel_dispatch(pixel, r, g, b):
+                #     pixel_queue.put([pixel, r, g, b, process_id])
+                while True:
+                    pairs = job_queue.get()
+                    pixel_color_pairs = self.camera.render_pixels(self, pairs)
+                    print '%d processed %d pixels' % (process_id, len(pixel_color_pairs))
+                    pixel_queue.put(pixel_color_pairs)
 
-            p1 = Process(target=dispatch_job, args=(pixel_queue, self.viewplane.resolution, 1))
-            p1.start()
+            for pixel_plane_point_pairs_chunk in (
+                    self.camera.get_pixel_plane_point_pairs(self, 1000)):
+                job_queue.put(pixel_plane_point_pairs_chunk)
+                total_pixel_count[0] += len(pixel_plane_point_pairs_chunk)
+
+            for i in xrange(4):
+                p = Process(target=dispatch_job, args=(pixel_queue, job_queue, i))
+                p.start()
 
         def render_pixel_offline(pixel, r, g, b):
             r = min(r, 255)
@@ -96,16 +109,8 @@ class World(object):
             surface.set_at(pixel, (r, g, b))
 
         need_render = True
+        running_dispatch = False
         while True:
-            new_pixels = []
-            while not pixel_queue.empty():
-                new_pixels.append(pixel_queue.get())
-            if new_pixels:
-                for pixel, r, g, b, process_id in new_pixels:
-                    render_pixel_realtime(pixel, r, g, b)
-
-                window.blit(surface, (0, 0))
-                pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     yaw = 0
@@ -156,6 +161,7 @@ class World(object):
                         self.camera.render_progressive(self, render_pixel_offline)
                 else:
                     render_parallize()
+                    running_dispatch = True
                     continue
 
                 window.blit(surface, (0, 0))
@@ -163,6 +169,22 @@ class World(object):
                 pygame.image.save(surface, "render.png")
                 print 'render complete!'
 
+            if running_dispatch:
+                print 'waiting for pixels...'
+                new_pixels = pixel_queue.get()
+                total_pixel_count[0] -= len(new_pixels)
+                print 'got pixels'
+                for pixel, r, g, b in new_pixels:
+                    render_pixel_realtime(pixel, r, g, b)
+                window.blit(surface, (0, 0))
+                pygame.display.flip()
+                if total_pixel_count[0] == 0:
+                    running_dispatch = False
+                    window.blit(surface, (0, 0))
+                    pygame.display.flip()
+                    pygame.image.save(surface, "render.png")
+                    print 'render complete!'
+                    print 'time elapsed: %.2f' % (time.time() - last_time[0])
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process some integers.')

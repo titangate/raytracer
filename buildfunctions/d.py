@@ -20,9 +20,9 @@ class BuildFunction(BuildFunctionBase):
             pixel_size = 5
             sampler = RegularSampler()
         else:
-            resolution = (200, 200)
-            pixel_size = 1.6
-            sampler = MultiJitteredSampler(sample_dim=5)
+            resolution = (500, 500)
+            pixel_size = .64
+            sampler = MultiJitteredSampler(sample_dim=1)
 
         world.background_color = (0.0,0.0,0.0)
         world.tracer = AreaLightTracer(world)
