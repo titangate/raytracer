@@ -6,6 +6,7 @@ import buildfunctions
 import argparse
 import affinetransform as transform
 import time
+from multiprocessing import Process, Queue
 
 
 class World(object):
@@ -65,6 +66,17 @@ class World(object):
         prev = [-1]
         last_time = [time.time()]
 
+        pixel_queue = Queue()
+
+        def render_parallize():
+            def dispatch_job(pixel_queue, dimension, process_id):
+                def render_pixel_dispatch(pixel, r, g, b):
+                    pixel_queue.put([pixel, r, g, b, process_id])
+                self.camera.render_progressive(self, render_pixel_dispatch)
+
+            p1 = Process(target=dispatch_job, args=(pixel_queue, self.viewplane.resolution, 1))
+            p1.start()
+
         def render_pixel_offline(pixel, r, g, b):
             r = min(r, 255)
             g = min(g, 255)
@@ -85,6 +97,15 @@ class World(object):
 
         need_render = True
         while True:
+            new_pixels = []
+            while not pixel_queue.empty():
+                new_pixels.append(pixel_queue.get())
+            if new_pixels:
+                for pixel, r, g, b, process_id in new_pixels:
+                    render_pixel_realtime(pixel, r, g, b)
+
+                window.blit(surface, (0, 0))
+                pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     yaw = 0
@@ -125,17 +146,21 @@ class World(object):
                 if event.type == pygame.QUIT:
                     sys.exit(0)
             if need_render:
+                need_render = False
                 if self.viewmode == "realtime":
                     self.camera.render(self, render_pixel_realtime)
-                else:
+                elif self.viewmode == "offline":
                     if self.fast:
                         self.camera.render(self, render_pixel_offline)
                     else:
                         self.camera.render_progressive(self, render_pixel_offline)
+                else:
+                    render_parallize()
+                    continue
+
                 window.blit(surface, (0, 0))
                 pygame.display.flip()
                 pygame.image.save(surface, "render.png")
-                need_render = False
                 print 'render complete!'
 
 if __name__ == "__main__":
