@@ -22,8 +22,8 @@ class BuildFunction(BuildFunctionBase):
             pixel_size = 5
             sampler = RegularSampler()
         else:
-            resolution = (500, 500)
-            pixel_size = .64
+            resolution = (200, 200)
+            pixel_size = .64 * 2.5
             sampler = MultiJitteredSampler(sample_dim=1)
 
         world.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
@@ -42,8 +42,12 @@ class BuildFunction(BuildFunctionBase):
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        sphere1 = Sphere(center=numpy.array((0.,1.,0.)), radius=1.5, material=mirror_mat)
-        world.objects.append(sphere1)
+        mesh = read_mesh(open('meshes/teapot.obj'))
+        mesh.compute_smooth_normal()
+        mesh.material = mirror_mat
+        boxes = mesh.get_bounding_boxes()
+        tree = KDTree(BoundingBoxes(boxes))
+        world.objects.append(tree)
 
         sphere2 = Sphere(center=numpy.array((-2.5,0.5,-1.5)), radius=1., material=matte1)
         world.objects.append(sphere2)
@@ -51,13 +55,13 @@ class BuildFunction(BuildFunctionBase):
         sphere3 = Sphere(center=numpy.array((3.5,1.5,2.5)), radius=2., material=matte2)
         world.objects.append(sphere3)
 
-        sphere4 = Sphere(center=numpy.array((2.5,0.5,-1.5)), radius=.7, material=mirror_mat)
+        sphere4 = Sphere(center=numpy.array((2.5,0.5,-1.5)), radius=.7, material=matte1)
         world.objects.append(sphere4)
 
         plane = Plane(origin=(0,0,0), normal=(0,1,0), material=matte3)
         world.objects.append(plane)
 
-        plane2 = Plane(origin=(0,0,8), normal=(0,0,-1), material=mirror_mat_alt)
+        plane2 = Plane(origin=(0,0,8), normal=(0,0,-1), material=matte2)
         world.objects.append(plane2)
 
         world.lights = [
