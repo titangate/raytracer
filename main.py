@@ -86,7 +86,7 @@ class World(object):
                 job_queue.put(pixel_plane_point_pairs_chunk)
                 total_pixel_count[0] += len(pixel_plane_point_pairs_chunk)
 
-            for i in xrange(4):
+            for i in xrange(3):
                 p = Process(target=dispatch_job, args=(pixel_queue, job_queue, i))
                 p.start()
 

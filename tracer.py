@@ -19,13 +19,17 @@ class ShadeRecord(object):
 
 
 class Tracer(object):
-    def __init__(self, world):
+    def __init__(self, world, depth_limit=5):
         self.world = world
+        self.depth_limit = 1
 
     def trace_ray(self, ray, depth=0):
+        if depth > self.depth_limit:
+            return (0.0,0.0,0.0)
         shader_rec = self.world.hit_objects(ray)
         if shader_rec:
             shader_rec.ray = ray
+            shader_rec.depth = depth
             return shader_rec.material.shade(shader_rec)
         else:
             return (0.0,0.0,0.0)

@@ -10,7 +10,11 @@ class Material(object):
         return numpy.array((0.,0.,0.))
 
 
-class Lambertian(Material):
+class BDRF(object):
+    pass
+
+
+class Lambertian(BDRF):
     def __init__(self, sampler, kd, cd):
         super(Lambertian, self).__init__()
         self.sampler = sampler
@@ -38,7 +42,27 @@ class Lambertian(Material):
         return self.kd * self.cd
 
 
-class GlossySpecular(Material):
+class PerfectSpecular(BDRF):
+    def __init__(self, sampler, kd, cd):
+        super(PerfectSpecular, self).__init__()
+        self.sampler = sampler
+        self.kd = kd
+        self.cd = cd
+
+    def f(self, shader_rec, wo, wi):
+        return self.kd * self.cd / numpy.pi
+
+    def sample_f(self, shader_rec, wo):
+        ndotwo = shader_rec.normal.dot(wo)
+        wi = -wo + 2.0 * shader_rec.normal.dot(ndotwo)
+
+        return self.kd * self.cd / (shader_rec.normal.dot(wi)), wi
+
+    def rho(self, shader_rec, wo):
+        return self.kd * self.cd
+
+
+class GlossySpecular(BDRF):
     def __init__(self, sampler, ks, cs, exp):
         super(GlossySpecular, self).__init__()
         self.sampler = sampler
@@ -158,6 +182,23 @@ class Phong(Material):
                 if not in_shadow and self.receives_shadow:
                     L += ((self.diffuse_brdf.f(sr, wo, wi) + self.specular_brdf.f(sr, wo, wi))
                           * light.L(sr) * ndotwi * light.G(sr) / light.pdf(sr))
+        return L
+
+
+class Reflective(Phong):
+    def __init__(self, kd, cd, exp):
+        super(Reflective, self).__init__(kd, cd, exp)
+        self.reflective_bdrf = PerfectSpecular(None, kd, cd)
+
+    def shade(self, sr):
+        L = super(Reflective, self).shade(sr)
+
+        wo = -sr.ray.direction
+        fr, wi = self.reflective_bdrf.sample_f(sr, wo)
+
+        reflected_ray = Ray(sr.hit_point, wi)
+
+        L += fr * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1) * sr.normal.dot(wi)
         return L
 
 
