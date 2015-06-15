@@ -336,6 +336,32 @@ class Plane(GeometryObject):
         return False, 0
 
 
+class CheckerPlane(Plane):
+    def __init__(self, origin, normal, material, alt_material, up, grid_size):
+        super(CheckerPlane, self).__init__(origin, normal, material)
+        self.grid_size = grid_size
+        self.up = up
+        self.right = numpy.cross(normal, up)
+        self.alt_material = alt_material
+
+    def hit(self, ray):
+        # ray is parallel to the plane
+        if numpy.dot(ray.direction, self.normal) == 0:
+            return None
+        t = numpy.dot((self.origin - ray.origin), self.normal) / numpy.dot(ray.direction, self.normal)
+        if t > epsilon:
+            local_hit_point = ray.origin + t * ray.direction
+            x = round(numpy.dot(local_hit_point - self.origin, self.right) / self.grid_size)
+            y = round(numpy.dot(local_hit_point - self.origin, self.up) / self.grid_size)
+            i = x + y
+            if i % 2 == 0:
+                mat = self.get_material()
+            else:
+                mat = self.alt_material
+            return ShadeRecord(normal=self.normal, local_hit_point=local_hit_point, tmin=t, material=mat)
+        else:
+            return None
+
 class Rectangle(GeometryObject):
     def __init__(self, p0, a, b, normal, right, material, sampler):
         super(Rectangle, self).__init__()
