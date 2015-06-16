@@ -10,7 +10,7 @@ from multiprocessing import Process, Queue
 
 
 class World(object):
-    def __init__(self, viewmode="realtime", buildfunction="a", fast=False, breakon=None):
+    def __init__(self, viewmode="realtime", buildfunction="a", fast=False, breakon=None, numcores=3):
         fcn = buildfunctions.buildfunctionbase.BuildFunctionBase.get_build_function(buildfunction)
         if fcn:
             fcn(self, viewmode)
@@ -18,6 +18,7 @@ class World(object):
             print 'No Buildfunction found! Make sure a buildfunction file exists under buildfunctions/'
             sys.exit()
         self.fast = fast
+        self.numcores = numcores
         self.breakon = breakon
 
     def hit_bare_bones_objects(self, ray):
@@ -90,7 +91,7 @@ class World(object):
 
             itr_sample[0] = self.camera.get_pixel_plane_point_pairs(self, 1000)
 
-            for i in xrange(3):
+            for i in xrange(self.numcores):
                 p = Process(target=dispatch_job, args=(pixel_queue, job_queue, i))
                 p.start()
 
@@ -206,6 +207,9 @@ if __name__ == "__main__":
     parser.add_argument('--viewmode', dest='viewmode', action='store',
                         default="realtime",
                         help='View mode: realtime or offline')
+    parser.add_argument('--numcores', dest='numcores', action='store',
+                        default=3, type=int,
+                        help='View mode: realtime or offline')
     parser.add_argument('--buildfunction', dest='buildfunction', action='store',
                         default="a",
                         help='Build Function: a or b')
@@ -223,5 +227,5 @@ if __name__ == "__main__":
         breakon = map(int,args.breakon.split(','))
 
     w = World(viewmode=args.viewmode, buildfunction=args.buildfunction, fast=args.fast,
-              breakon=breakon)
+              breakon=breakon, numcores=args.numcores)
     w.render()
