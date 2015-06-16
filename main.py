@@ -69,7 +69,14 @@ class World(object):
         pixel_queue = Queue()
         job_queue = Queue()
 
-        total_pixel_count = [0]
+        itr_sample = [None]
+
+        def add_job_if_needed():
+            while job_queue.qsize() < 50:
+                sample = next(itr_sample[0], None)
+                if sample is None:
+                    break
+                job_queue.put(sample)
 
         def render_parallize():
             def dispatch_job(pixel_queue, job_queue, process_id):
@@ -81,14 +88,21 @@ class World(object):
                     print '%d processed %d pixels' % (process_id, len(pixel_color_pairs))
                     pixel_queue.put(pixel_color_pairs)
 
-            for pixel_plane_point_pairs_chunk in (
-                    self.camera.get_pixel_plane_point_pairs(self, 1000)):
-                job_queue.put(pixel_plane_point_pairs_chunk)
-                total_pixel_count[0] += len(pixel_plane_point_pairs_chunk)
+            itr_sample[0] = self.camera.get_pixel_plane_point_pairs(self, 1000)
 
             for i in xrange(3):
                 p = Process(target=dispatch_job, args=(pixel_queue, job_queue, i))
                 p.start()
+
+        pixels = {}
+        def render_pixel_dispatched(pixel, r, g, b):
+            r = min(r, 255)
+            g = min(g, 255)
+            b = min(b, 255)
+            if pixel not in pixels:
+                pixels[pixel] = numpy.array((0., 0., 0., 0.))
+            pixels[pixel] += numpy.array((r, g, b, 1))
+            surface.set_at(pixel, pixels[pixel][:3] / pixels[pixel][3])
 
         def render_pixel_offline(pixel, r, g, b):
             r = min(r, 255)
@@ -171,14 +185,15 @@ class World(object):
 
             if running_dispatch:
                 print 'waiting for pixels...'
+                add_job_if_needed()
                 new_pixels = pixel_queue.get()
-                total_pixel_count[0] -= len(new_pixels)
                 print 'got pixels'
                 for pixel, r, g, b in new_pixels:
-                    render_pixel_realtime(pixel, r, g, b)
+                    render_pixel_dispatched(pixel, r, g, b)
                 window.blit(surface, (0, 0))
                 pygame.display.flip()
-                if total_pixel_count[0] == 0:
+                add_job_if_needed()
+                if False:
                     running_dispatch = False
                     window.blit(surface, (0, 0))
                     pygame.display.flip()
