@@ -21,7 +21,7 @@ class ShadeRecord(object):
 class Tracer(object):
     def __init__(self, world, depth_limit=5):
         self.world = world
-        self.depth_limit = 1
+        self.depth_limit = depth_limit
 
     def trace_ray(self, ray, depth=0):
         if depth > self.depth_limit:

@@ -133,9 +133,9 @@ class World(object):
                         roll += 1
 
                     if event.key == pygame.K_j:
-                        pan += 50
+                        pan += 0.5
                     if event.key == pygame.K_k:
-                        pan -= 50
+                        pan -= 0.5
 
                     if event.key == pygame.K_u:
                         self.camera.focal_plane_distance += 100

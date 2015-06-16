@@ -54,7 +54,7 @@ class PerfectSpecular(BDRF):
 
     def sample_f(self, shader_rec, wo):
         ndotwo = shader_rec.normal.dot(wo)
-        wi = -wo + 2.0 * shader_rec.normal.dot(ndotwo)
+        wi = -wo + 2.0 * shader_rec.normal * ndotwo
 
         return self.kd * self.cd / (shader_rec.normal.dot(wi)), wi
 
@@ -83,6 +83,27 @@ class GlossySpecular(BDRF):
 
     def rho(self, shader_rec, wo):
         return numpy.zeros(3)
+
+    def sample_f(self, shader_rec, wo):
+        ndotwo = shader_rec.normal.dot(wo)
+        w = -wo + 2.0 * shader_rec.normal * ndotwo
+
+        u = numpy.cross(numpy.array((0.00424, 1., 0.00767)), w)
+        u /= numpy.linalg.norm(u)
+        v = numpy.cross(u, w)
+
+        sp = self.sampler.sample_unit_hemisphere_surface()
+        wi = sp[0] * u + sp[1] * v + sp[2] * w
+
+        if shader_rec.normal.dot(wi) < 0.0:
+            wi = -sp[0] * u - sp[1] * v + sp[2] * w
+
+        phong_lobe = (w.dot(wi)) ** self.exp
+        pdf = phong_lobe * (shader_rec.normal.dot(wi))
+        if pdf == 0:
+            return self.cs * 0, wi, 1
+
+        return self.ks * self.cs * phong_lobe, wi, pdf
 
 
 class Matte(Material):
@@ -135,9 +156,11 @@ class Matte(Material):
 
 
 class Phong(Material):
-    def __init__(self, kd, cd, exp):
+    def __init__(self, kd, cd, exp, ka=None):
         super(Phong, self).__init__()
-        self.ambient_brdf = Lambertian(None, kd, cd)
+        if ka is None:
+            ka = kd
+        self.ambient_brdf = Lambertian(None, ka, cd)
         self.diffuse_brdf = Lambertian(None, kd, cd)
         self.specular_brdf = GlossySpecular(None, kd, cd, exp)
 
@@ -186,9 +209,11 @@ class Phong(Material):
 
 
 class Reflective(Phong):
-    def __init__(self, kd, cd, exp):
-        super(Reflective, self).__init__(kd, cd, exp)
-        self.reflective_bdrf = PerfectSpecular(None, kd, cd)
+    def __init__(self, kd, cd, exp, ka=None, kf=None):
+        super(Reflective, self).__init__(kd, cd, exp, ka)
+        if kf is None:
+            kf = kd
+        self.reflective_bdrf = PerfectSpecular(None, kf, cd)
 
     def shade(self, sr):
         L = super(Reflective, self).shade(sr)
@@ -199,6 +224,25 @@ class Reflective(Phong):
         reflected_ray = Ray(sr.hit_point, wi)
 
         L += fr * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1) * sr.normal.dot(wi)
+        return L
+
+
+class GlossyReflective(Phong):
+    def __init__(self, kd, cd, exp, sampler, ka=None, kf=None):
+        super(GlossyReflective, self).__init__(kd, cd, exp, ka)
+        if kf is None:
+            kf = kd
+        self.reflective_bdrf = GlossySpecular(sampler, kf, cd, exp)
+
+    def shade(self, sr):
+        L = super(GlossyReflective, self).shade(sr)
+
+        wo = -sr.ray.direction
+        fr, wi, pdf = self.reflective_bdrf.sample_f(sr, wo)
+
+        reflected_ray = Ray(sr.hit_point, wi)
+
+        L += fr * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1) * sr.normal.dot(wi) / pdf
         return L
 
 
