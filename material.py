@@ -160,8 +160,6 @@ class Phong(Material):
         super(Phong, self).__init__()
         if ka is None:
             ka = kd
-        self.ambient_brdf = Lambertian(None, ka, cd)
-        self.diffuse_brdf = Lambertian(None, kd, cd)
         self.specular_brdf = GlossySpecular(None, kd, cd, exp)
 
     def set_ka(self, ka):

@@ -62,7 +62,6 @@ usemtl leftWall
 f -4 -3 -2 -1
 
 ## Object shortBox 
-usemtl shortBox
 
 # Top Face 
 v	0.53  0.60   0.75 
