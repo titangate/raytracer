@@ -477,7 +477,14 @@ class Mesh(GeometryObject):
     def __init__(self, vertices, indices, material=None):
         super(Mesh, self).__init__()
         self.vertices = vertices
-        self.indices = indices
+        parsed_indices = []
+        for idx in indices:
+            if len(idx) == 4:
+                parsed_indices.append([idx[0], idx[1], idx[2]])
+                parsed_indices.append([idx[0], idx[2], idx[3]])
+            else:
+                parsed_indices.append(idx)
+        self.indices = parsed_indices
         self.normals = []
         self.material = material
         self.vertices_normal = None
@@ -569,10 +576,12 @@ class Mesh(GeometryObject):
         boxes = []
         for i, idx in enumerate(self.indices):
             v0, v1, v2 = (self.vertices[i] for i in idx)
-            n0, n1, n2 = (self.vertices_normal[i] for i in idx)
             triangle = Triangle(v0, v1, v2, self.material)
             if self.vertices_normal:
+                n0, n1, n2 = (self.vertices_normal[i] for i in idx)
                 triangle.n0, triangle.n1, triangle.n2 = n0, n1, n2
+            else:
+                triangle.normal = self.normals[i]
             triangle.label = str(i)
             triangle.cast_shadow = self.cast_shadow
             boxes.extend(triangle.get_bounding_boxes())

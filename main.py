@@ -97,13 +97,17 @@ class World(object):
 
         pixels = {}
         def render_pixel_dispatched(pixel, r, g, b):
-            r = min(r, 255)
-            g = min(g, 255)
-            b = min(b, 255)
             if pixel not in pixels:
                 pixels[pixel] = numpy.array((0., 0., 0., 0.))
             pixels[pixel] += numpy.array((r, g, b, 1))
-            surface.set_at(pixel, pixels[pixel][:3] / pixels[pixel][3])
+            r, g, b = pixels[pixel][:3] / pixels[pixel][3]
+            r = min(r, 255)
+            g = min(g, 255)
+            b = min(b, 255)
+            try:
+                surface.set_at(pixel, (r, g, b))
+            except:
+                print r, g, b, 'invalid'
 
         def render_pixel_offline(pixel, r, g, b):
             r = min(r, 255)
@@ -203,16 +207,16 @@ class World(object):
                     print 'time elapsed: %.2f' % (time.time() - last_time[0])
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Render some images.')
     parser.add_argument('--viewmode', dest='viewmode', action='store',
                         default="realtime",
                         help='View mode: realtime or offline')
     parser.add_argument('--numcores', dest='numcores', action='store',
                         default=3, type=int,
-                        help='View mode: realtime or offline')
+                        help='Number of Cores: number of CPU cores to use(spawn # processes)')
     parser.add_argument('--buildfunction', dest='buildfunction', action='store',
                         default="a",
-                        help='Build Function: a or b')
+                        help='Build Function: file name of *.py under buildfunctions/')
     parser.add_argument('--fast', dest="fast", action='store_true',
                         default=False)
     parser.add_argument('--breakon', dest='breakon', action='store',
