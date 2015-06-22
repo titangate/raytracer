@@ -1,5 +1,5 @@
 from sampler import RegularSampler, MultiJitteredSampler
-from tracer import ViewPlane, Tracer
+from tracer import ViewPlane, Tracer, PathTracer
 from material import Matte
 from light import AmbientLight, PointLight
 from camera import PinholeCamera
@@ -24,20 +24,21 @@ class BuildFunction(BuildFunctionBase):
         else:
             resolution = (200, 200)
             pixel_size = 1.6
-            sampler = MultiJitteredSampler(sample_dim=1)
+            sampler = MultiJitteredSampler(sample_dim=10)
+        mat_sampler = MultiJitteredSampler(sample_dim=10)
 
         world.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
         world.camera = PinholeCamera(eye=(0., 1, 6.),
             up=(0.,1.,0.), lookat=(0.,1,0.), viewing_distance=800.)
 
         world.background_color = (0.0,0.0,0.0)
-        world.tracer = Tracer(world)
+        world.tracer = PathTracer(world)
         world.objects = []
 
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        world_objects = read_mesh_complex('CornellBox/CornellBox-Original.obj')
+        world_objects = read_mesh_complex('CornellBox/CornellBox-Original.obj', mat_sampler=mat_sampler)
 
         boxes = []
         for key, mesh in world_objects.iteritems():

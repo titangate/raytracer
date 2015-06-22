@@ -24,7 +24,7 @@ class Lambertian(BDRF):
     def f(self, shader_rec, wo, wi):
         return self.kd * self.cd / numpy.pi
 
-    def sample_f(self, shader_rec, wo, wi):
+    def sample_f(self, shader_rec, wo):
         w = shader_rec.normal
         v = numpy.cross(numpy.array([0.0034, 1, 0.0071]),w)
         v /= numpy.linalg.norm(v)
@@ -56,7 +56,8 @@ class PerfectSpecular(BDRF):
         ndotwo = shader_rec.normal.dot(wo)
         wi = -wo + 2.0 * shader_rec.normal * ndotwo
 
-        return self.kd * self.cd / (shader_rec.normal.dot(wi)), wi
+        pdf = shader_rec.normal.dot(wi)
+        return self.kd * self.cd / pdf, wi, pdf
 
     def rho(self, shader_rec, wo):
         return self.kd * self.cd
@@ -107,10 +108,10 @@ class GlossySpecular(BDRF):
 
 
 class Matte(Material):
-    def __init__(self, ka, kd, cd):
+    def __init__(self, ka, kd, cd, sampler=None):
         super(Matte, self).__init__()
         self.ambient_brdf = Lambertian(None, ka, cd)
-        self.diffuse_brdf = Lambertian(None, kd, cd)
+        self.diffuse_brdf = Lambertian(sampler, kd, cd)
 
     def set_ka(self, ka):
         self.ambient_brdf.kd = ka
@@ -121,6 +122,9 @@ class Matte(Material):
     def set_cd(self, c):
         self.ambient_brdf.cd = c
         self.diffuse_brdf.cd = c
+
+    def sample_f(self, shader_rec, wo):
+        return self.diffuse_brdf.sample_f(shader_rec, wo)
 
     def shade(self, sr):
         wo = -sr.ray.direction
@@ -153,6 +157,14 @@ class Matte(Material):
                 if not in_shadow and self.receives_shadow:
                     L += self.diffuse_brdf.f(sr, wo, wi) * light.L(sr) * ndotwi * light.G(sr) / light.pdf(sr)
         return L
+
+    def path_shade(self, sr):
+        f, wi, pdf = self.diffuse_brdf.sample_f(sr, -sr.ray.direction)
+        ndotwi = sr.normal.dot(wi)
+
+        reflected_ray = Ray(sr.hit_point, wi)
+
+        return f * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1) * ndotwi / pdf
 
 
 class Phong(Material):
@@ -217,7 +229,7 @@ class Reflective(Phong):
         L = super(Reflective, self).shade(sr)
 
         wo = -sr.ray.direction
-        fr, wi = self.reflective_bdrf.sample_f(sr, wo)
+        fr, wi, pdf = self.reflective_bdrf.sample_f(sr, wo)
 
         reflected_ray = Ray(sr.hit_point, wi)
 
@@ -254,10 +266,16 @@ class Emissive(Material):
         return self.ls * self.color
 
     def shade(self, shader_rec):
-        pass
+        return numpy.array((1., 1., 1.))
 
     def area_light_shade(self, shader_rec):
         if -shader_rec.normal.dot(shader_rec.ray.direction) > 0:
             return self.ls * self.color
         else:
             return numpy.array((0.,0.,0.))
+
+    def path_shade(self, sr):
+        ndotwi = sr.normal.dot(sr.ray.direction)
+        if ndotwi < 0:
+            return self.ls * self.color
+        return numpy.array((0., 0., 0.))

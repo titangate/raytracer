@@ -32,7 +32,7 @@ def read_mesh(f, face_limit=None):
 # 10. Casts shadows onto invisible surfaces
 
 class MaterialFactory(object):
-    def __init__(self, f):
+    def __init__(self, f, mat_sampler):
         self.materials = {}
 
         def close_mat(name, params):
@@ -54,7 +54,7 @@ class MaterialFactory(object):
                 if 'Ke' in params and sum(Ke):
                     mat = Emissive(1., Ke)
                 elif Ns and Ns != 0.:
-                    mat = Matte(1., Kd, color)
+                    mat = Matte(1., Kd, color, sampler=mat_sampler)
                 elif Ns:
                     mat = Phong(Kd, color, Ni)
 
@@ -87,11 +87,11 @@ class MaterialFactory(object):
         return self.materials[name]
 
 
-def read_mat(f):
-    return MaterialFactory(f)
+def read_mat(f, mat_sampler):
+    return MaterialFactory(f, mat_sampler)
 
 
-def read_mesh_complex(f):
+def read_mesh_complex(f, mat_sampler):
     vertices = []
     faces = []
     objects = {}
@@ -129,9 +129,9 @@ def read_mesh_complex(f):
             elif symbol == 'usemtl':
                 mtl = line[1]
             elif symbol == 'mtllib':
-                mtl_lib = read_mat(open(folder + '/' + line[1]))
+                mtl_lib = read_mat(open(folder + '/' + line[1]), mat_sampler)
 
     if faces:
-        close_mesh(vertices, faces, current_key, mtl)
+        objects[current_key] = close_mesh(vertices, faces, current_key, mtl)
 
     return objects
