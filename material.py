@@ -107,6 +107,44 @@ class GlossySpecular(BDRF):
         return self.ks * self.cs * phong_lobe, wi, pdf
 
 
+class BTDF(object):
+    def __init__(self, sampler=None):
+        self.sampler = sampler
+
+
+class PerfectTransmitter(BTDF):
+    def __init__(self, ior, kt, sampler=None):
+        super(PerfectTransmitter, self).__init__(sampler)
+        self.ior = ior
+        self.kt = kt
+
+    def total_internal_reflection(self, sr):
+        wo = -sr.ray.direction
+        cos_thetai = sr.normal.dot(wo)
+        eta = self.ior
+        if cos_thetai < 0.:
+            eta = 1.0 / eta
+
+        return 1. - (1. - cos_thetai ** 2) / eta ** 2 < 0.
+
+    def sample_f(self, sr, wo):
+        n = sr.normal
+        cos_thetai = n.dot(wo)
+        eta = self.ior
+
+        if cos_thetai < 0.:
+            cos_thetai = -cos_thetai
+            n = -n
+            eta = 1.0 / eta
+
+        temp = 1. - (1. - cos_thetai ** 2) / eta ** 2
+        cos_theta2 = temp ** 0.5
+
+        wt = -wo / eta - (cos_theta2 - cos_thetai / eta) * n
+
+        return self.kt / eta ** 2 * numpy.array((1., 1., 1.)) / abs(sr.normal.dot(wt)), wt
+
+
 class Matte(Material):
     def __init__(self, ka, kd, cd, sampler=None):
         super(Matte, self).__init__()
@@ -169,9 +207,11 @@ class Matte(Material):
 
 class Phong(Material):
     def __init__(self, kd, cd, exp, ka=None):
-        super(Phong, self).__init__()
         if ka is None:
             ka = kd
+        super(Phong, self).__init__()
+        self.ambient_brdf = Lambertian(None, ka, cd)
+        self.diffuse_brdf = Lambertian(None, kd, cd)
         self.specular_brdf = GlossySpecular(None, kd, cd, exp)
 
     def set_ka(self, ka):
@@ -253,6 +293,32 @@ class GlossyReflective(Phong):
         reflected_ray = Ray(sr.hit_point, wi)
 
         L += fr * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1) * sr.normal.dot(wi) / pdf
+        return L
+
+
+class Transparent(Phong):
+    def __init__(self, kd, cd, exp, sampler, ior, kt, kr, ka=None):
+        super(Transparent, self).__init__(kd, cd, exp, ka)
+        self.reflective_bdrf = PerfectSpecular(sampler, kr, cd)
+        self.specular_btrf = PerfectTransmitter(ior, kt)
+
+    def shade(self, sr):
+        L = super(Transparent, self).shade(sr)
+
+        wo = -sr.ray.direction
+        fr, wi, pdf = self.reflective_bdrf.sample_f(sr, wo)
+
+        reflected_ray = Ray(sr.hit_point, wi)
+
+        reflected_component = fr * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1)
+
+        if self.specular_btrf.total_internal_reflection(sr):
+            L += reflected_component
+        else:
+            ft, wt = self.specular_btrf.sample_f(sr, wo)
+            transmitted_ray = Ray(sr.hit_point, wt)
+            L += reflected_component * sr.normal.dot(wi)
+            L += ft * sr.world.tracer.trace_ray(transmitted_ray, sr.depth + 1)
         return L
 
 

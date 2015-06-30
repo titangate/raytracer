@@ -212,6 +212,7 @@ class AxisAlignedBox(GeometryObject):
 
             tmin = tmin
             shader_rec = ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=tmin)
+            shader_rec.material = self.get_material()
             return shader_rec
         else:
             return None
