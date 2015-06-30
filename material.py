@@ -142,7 +142,7 @@ class PerfectTransmitter(BTDF):
 
         wt = -wo / eta - (cos_theta2 - cos_thetai / eta) * n
 
-        return self.kt / eta ** 2 * numpy.array((1., 1., 1.)) / abs(sr.normal.dot(wt)), wt
+        return self.kt / eta ** 2 / abs(sr.normal.dot(wt)), wt
 
 
 class Matte(Material):
@@ -318,7 +318,7 @@ class Transparent(Phong):
             ft, wt = self.specular_btrf.sample_f(sr, wo)
             transmitted_ray = Ray(sr.hit_point, wt)
             L += reflected_component * sr.normal.dot(wi)
-            L += ft * sr.world.tracer.trace_ray(transmitted_ray, sr.depth + 1)
+            L += ft * sr.world.tracer.trace_ray(transmitted_ray, sr.depth + 1) * abs(sr.normal.dot(wt))
         return L
 
 
@@ -338,7 +338,7 @@ class Emissive(Material):
         if -shader_rec.normal.dot(shader_rec.ray.direction) > 0:
             return self.ls * self.color
         else:
-            return numpy.array((0.,0.,0.))
+            return numpy.array((0. ,0. ,0.))
 
     def path_shade(self, sr):
         ndotwi = sr.normal.dot(sr.ray.direction)

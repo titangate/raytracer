@@ -31,8 +31,8 @@ class BuildFunction(BuildFunctionBase):
         world.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
         world.camera = PinholeCamera(eye=(7., 2., -7.), up=(0.,1.,0.), lookat=(0.,1.5,0.), viewing_distance=300.)
 
-        world.background_color = (0.0,0.0,0.0)
-        world.tracer = Tracer(world)
+        world.background_color = numpy.array((0.0,0.0,0.0))
+        world.tracer = Tracer(world, 5)
         world.objects = []
 
         matte1 = Phong(1, numpy.array((1.,.84,.1)), 100)  # yellow
@@ -43,26 +43,27 @@ class BuildFunction(BuildFunctionBase):
         mirror_mat_alt = GlossyReflective(0.0, numpy.array((1.,1.,1.)), 10, sampler_bdrf, kf=1.0)  # white
 
         transparent_mat = Transparent(sampler=sampler_bdrf,
-                                      ior=0.9,
+                                      ior=1.,
                                       ka=0,
                                       kd=0,
-                                      kr=.3,
+                                      kr=.1,
                                       cd=numpy.array((1., 1., 1.)),
-                                      kt=.7,
+                                      kt=.9,
                                       exp=0.)
 
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 
-        # sphere1 = Sphere(center=numpy.array((0,1.5,-0.5)), radius=2., material=transparent_mat)
-        # world.objects.append(sphere1)
-        box1 = AxisAlignedBox(-1., 1., 0., 5., -1., 1., material=transparent_mat)
-        world.objects.append(box1)
+        sphere1 = Sphere(center=numpy.array((0,2.1,-0.5)), radius=2., material=transparent_mat)
+        sphere1.cast_shadow = False
+        world.objects.append(sphere1)
+        # box1 = AxisAlignedBox(-1., 1., 0.05, 5., -1., 1., material=transparent_mat)
+        # world.objects.append(box1)
 
-        sphere2 = Sphere(center=numpy.array((-2.5,0.5,-1.5)), radius=1., material=matte1)
+        sphere2 = Sphere(center=numpy.array((-2.5,0.5,-2.5)), radius=2., material=matte1)
         world.objects.append(sphere2)
 
-        sphere3 = Sphere(center=numpy.array((3.5,1.5,0.5)), radius=2., material=matte4)
+        sphere3 = Sphere(center=numpy.array((3.5,1.5,0.5)), radius=1., material=matte4)
         world.objects.append(sphere3)
 
         plane = CheckerPlane(origin=(0,0,0), normal=(0,1,0), material=matte3, alt_material=matte2,

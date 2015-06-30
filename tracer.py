@@ -25,14 +25,14 @@ class Tracer(object):
 
     def trace_ray(self, ray, depth=0):
         if depth > self.depth_limit:
-            return (0.0,0.0,0.0)
+            return numpy.array((0.0, 0.0, 0.0))
         shader_rec = self.world.hit_objects(ray)
         if shader_rec:
             shader_rec.ray = ray
             shader_rec.depth = depth
             return shader_rec.material.shade(shader_rec)
         else:
-            return (0.0,0.0,0.0)
+            return numpy.array((0.0, 0.0, 0.0))
 
 
 class AreaLightTracer(object):
