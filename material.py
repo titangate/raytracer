@@ -310,14 +310,14 @@ class Transparent(Phong):
 
         reflected_ray = Ray(sr.hit_point, wi)
 
-        reflected_component = fr * sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1)
+        reflected_component = sr.world.tracer.trace_ray(reflected_ray, sr.depth + 1)
 
         if self.specular_btrf.total_internal_reflection(sr):
             L += reflected_component
         else:
             ft, wt = self.specular_btrf.sample_f(sr, wo)
             transmitted_ray = Ray(sr.hit_point, wt)
-            L += reflected_component * sr.normal.dot(wi)
+            L += reflected_component * sr.normal.dot(wi) * fr
             L += ft * sr.world.tracer.trace_ray(transmitted_ray, sr.depth + 1) * abs(sr.normal.dot(wt))
         return L
 

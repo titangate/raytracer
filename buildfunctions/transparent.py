@@ -31,7 +31,7 @@ class BuildFunction(BuildFunctionBase):
         world.viewplane = ViewPlane(resolution=resolution, pixel_size=pixel_size, sampler=sampler)
         world.camera = PinholeCamera(eye=(7., 2., -7.), up=(0.,1.,0.), lookat=(0.,1.5,0.), viewing_distance=300.)
 
-        world.background_color = numpy.array((0.0,0.0,0.0))
+        world.background_color = numpy.array((0.2, 0.2, 0.2))
         world.tracer = Tracer(world, 5)
         world.objects = []
 
@@ -43,7 +43,7 @@ class BuildFunction(BuildFunctionBase):
         mirror_mat_alt = GlossyReflective(0.0, numpy.array((1.,1.,1.)), 10, sampler_bdrf, kf=1.0)  # white
 
         transparent_mat = Transparent(sampler=sampler_bdrf,
-                                      ior=1.,
+                                      ior=1.05,
                                       ka=0,
                                       kd=0,
                                       kr=.1,
@@ -63,15 +63,15 @@ class BuildFunction(BuildFunctionBase):
         sphere2 = Sphere(center=numpy.array((-2.5,0.5,-2.5)), radius=2., material=matte1)
         world.objects.append(sphere2)
 
-        sphere3 = Sphere(center=numpy.array((3.5,1.5,0.5)), radius=1., material=matte4)
+        sphere3 = Sphere(center=numpy.array((-5,1.5,5)), radius=1., material=matte4)
         world.objects.append(sphere3)
 
         plane = CheckerPlane(origin=(0,0,0), normal=(0,1,0), material=matte3, alt_material=matte2,
                              up=(1,0,0), grid_size=0.5)
         world.objects.append(plane)
 
-        plane2 = Plane(origin=(0,0,8), normal=(0,0,-1), material=matte2)
-        world.objects.append(plane2)
+        # plane2 = Plane(origin=(0,0,8), normal=(0,0,-1), material=matte2)
+        # world.objects.append(plane2)
 
         world.lights = [
             PointLight(numpy.array((1.,1.,1.)), 1., numpy.array((1., 8., 2.)), radius=10, attenuation=2, cast_shadow=True)
