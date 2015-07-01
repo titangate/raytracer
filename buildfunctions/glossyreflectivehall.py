@@ -35,12 +35,11 @@ class BuildFunction(BuildFunctionBase):
         world.tracer = Tracer(world)
         world.objects = []
 
-        matte1 = Phong(1, numpy.array((1.,.84,.1)), bdrf_e)  # yellow
-        matte2 = Matte(1, 1, numpy.array((.1,.84,1.)))  # gold
-        matte4 = Matte(1, 1, numpy.array((1.,1.,1.)))  # white
-        matte3 = Matte(1, 1, numpy.array((.2,.3,1.)))  # dark
-        mirror_mat = GlossyReflective(0.0, numpy.array((1.,1.,1.)), bdrf_e, sampler_bdrf, kf=1.0)  # white
-        mirror_mat_alt = Reflective(0.0, numpy.array((1.,1.,1.)), 10, kf=1.0)  # white
+        matte1 = Phong(ka=1, kd=1, ks=1, exp=100, cd=numpy.array((1., .84, .1)))
+        matte2 = Matte(ka=1, kd=1, cd=numpy.array([1., .84, 1.]))
+        matte3 = Matte(ka=1, kd=1, cd=numpy.array([1., 1., 1.]))
+        mirror_mat = GlossyReflective(ka=0., kd=0., ks=0., kr=1.0, exp=bdrf_e, cd=numpy.array((1., 1., 1.)), sampler=sampler_bdrf)
+        mirror_mat_alt = GlossyReflective(ka=0., kd=0., ks=0., kr=1.0, exp=10, cd=numpy.array((1., 1., 1.)), sampler=sampler_bdrf)
 
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder

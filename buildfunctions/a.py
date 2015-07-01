@@ -33,14 +33,6 @@ class BuildFunction(BuildFunctionBase):
 
         world.ambient_color = AmbientOccluder(numpy.array([0.2, 0.2, 0.2]), 1, sampler)
 
-        # initiate objects
-        # for x in xrange(3):
-        #     for y in xrange(3):
-        #         color = numpy.array([x / 3., y / 3., .5])
-        #         world.objects.append(Sphere(
-        #             center=(x * 250 - 250.,y * 120 - 150., (x * 3+y) * 40 + 250),
-        #             radius=50.0,
-        #             material=Matte(1,color)))
         world.lights = [
             DirectionLight(numpy.array([0,1,1]),1,numpy.array([0,-0.707,0.707]),True),
             DirectionLight(numpy.array([1,0,1]),1,numpy.array([0,-0.707,-0.707]),True),
@@ -51,16 +43,16 @@ class BuildFunction(BuildFunctionBase):
         world.objects.append(Sphere(
                     center=(-300, -100, 100),
                     radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
+                    material=Phong(ka=1, kd=1, ks=1, exp=1, cd=numpy.array([0.8, 0.8, 0.8]))))
         world.objects.append(Sphere(
                     center=(-75, -100, -100),
                     radius=100.0,
-                    material=Matte(1,1,numpy.array([0.8,0.8,0.8]))))
+                    material=Matte(ka=1, kd=1, cd=numpy.array([0.8, 0.8, 0.8]))))
         world.objects.append(Sphere(
                     center=(75, -100, 100),
                     radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),1)))
+                    material=Phong(ka=1, kd=1, ks=1, exp=1, cd=numpy.array([0.8, 0.8, 0.8]))))
         world.objects.append(Sphere(
                     center=(300, -100, -300),
                     radius=100.0,
-                    material=Phong(1,numpy.array([0.8,0.8,0.8]),100)))
+                    material=Phong(ka=1, kd=1, ks=1, exp=100, cd=numpy.array([0.8, 0.8, 0.8]))))

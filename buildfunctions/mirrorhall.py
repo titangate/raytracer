@@ -33,9 +33,7 @@ class BuildFunction(BuildFunctionBase):
         world.tracer = Tracer(world)
         world.objects = []
 
-        matte1 = Matte(1, 1, numpy.array((1.,.84,.1)))  # gold
-        matte2 = Matte(1, 1, numpy.array((1.,1,1)))  # white
-        mirror_mat = Reflective(0.6, numpy.array((1.,1.,1.)), 100)  # white
+        mirror_mat = Reflective(ka=.6, kd=.6, ks=.6, kr=1.0, exp=100, cd=numpy.array((1., 1., 1.)))
 
         sphere = Sphere(center=numpy.array((0, 0, 0)), radius=1, material=mirror_mat)
         world.objects.append(sphere)

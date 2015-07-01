@@ -33,10 +33,10 @@ class BuildFunction(BuildFunctionBase):
         world.tracer = Tracer(world, 20)
         world.objects = []
 
-        mirror_mat = Reflective(0.6, numpy.array((1.,1.,1.)), 500)  # white
-        mirror_mat_r = Reflective(0.6, numpy.array((1.,.1,.1)), 500)  # white
-        mirror_mat_g = Reflective(0.6, numpy.array((.1,1.,.1)), 500)  # white
-        mirror_mat_b = Reflective(0.6, numpy.array((.1,.1,1.)), 500)  # white
+        mirror_mat = Reflective(ka=0.6, kd=0.6, ks=0.6, kr=1.0, exp=500, cd=numpy.array((1., 1., 1.)))  # white
+        mirror_mat_r = Reflective(ka=0.6, kd=0.6, ks=0.6, kr=1.0, exp=500, cd=numpy.array((1., .1, .1)))  # white
+        mirror_mat_g = Reflective(ka=0.6, kd=0.6, ks=0.6, kr=1.0, exp=500, cd=numpy.array((.1, 1., .1)))  # white
+        mirror_mat_b = Reflective(ka=0.6, kd=0.6, ks=0.6, kr=1.0, exp=500, cd=numpy.array((.1, .1, 1.)))  # white
 
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .05)
         world.ambient_color = occluder

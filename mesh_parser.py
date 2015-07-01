@@ -54,9 +54,9 @@ class MaterialFactory(object):
                 if 'Ke' in params and sum(Ke):
                     mat = Emissive(1., Ke)
                 elif Ns and Ns != 0.:
-                    mat = Matte(1., Kd, color, sampler=mat_sampler)
+                    mat = Matte(ka=Ka, kd=Kd, cd=color, sampler=mat_sampler)
                 elif Ns:
-                    mat = Phong(Kd, color, Ni)
+                    mat = Phong(ka=Ka, kd=Kd, ks=Ks, cd=color, exp=Ns)
 
             print name, mat
             self.materials[name] = mat

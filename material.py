@@ -206,13 +206,11 @@ class Matte(Material):
 
 
 class Phong(Material):
-    def __init__(self, kd, cd, exp, ka=None):
-        if ka is None:
-            ka = kd
+    def __init__(self, ka, kd, ks, cd, exp, sampler=None):
         super(Phong, self).__init__()
-        self.ambient_brdf = Lambertian(None, ka, cd)
-        self.diffuse_brdf = Lambertian(None, kd, cd)
-        self.specular_brdf = GlossySpecular(None, kd, cd, exp)
+        self.ambient_brdf = Lambertian(sampler, ka, cd)
+        self.diffuse_brdf = Lambertian(sampler, kd, cd)
+        self.specular_brdf = GlossySpecular(sampler, ks, cd, exp)
 
     def set_ka(self, ka):
         self.ambient_brdf.kd = ka
@@ -259,11 +257,9 @@ class Phong(Material):
 
 
 class Reflective(Phong):
-    def __init__(self, kd, cd, exp, ka=None, kf=None):
-        super(Reflective, self).__init__(kd, cd, exp, ka)
-        if kf is None:
-            kf = kd
-        self.reflective_bdrf = PerfectSpecular(None, kf, cd)
+    def __init__(self, ka, kd, ks, kr, cd, exp, sampler=None):
+        super(Reflective, self).__init__(ka, kd, ks, cd, exp, sampler)
+        self.reflective_bdrf = PerfectSpecular(None, kr, cd)
 
     def shade(self, sr):
         L = super(Reflective, self).shade(sr)
@@ -278,11 +274,9 @@ class Reflective(Phong):
 
 
 class GlossyReflective(Phong):
-    def __init__(self, kd, cd, exp, sampler, ka=None, kf=None):
-        super(GlossyReflective, self).__init__(kd, cd, exp, ka)
-        if kf is None:
-            kf = kd
-        self.reflective_bdrf = GlossySpecular(sampler, kf, cd, exp)
+    def __init__(self, ka, kd, ks, kr, cd, exp, sampler):
+        super(GlossyReflective, self).__init__(ka, kd, ks, cd, exp, sampler)
+        self.reflective_bdrf = GlossySpecular(sampler, kr, cd, exp)
 
     def shade(self, sr):
         L = super(GlossyReflective, self).shade(sr)
@@ -297,8 +291,8 @@ class GlossyReflective(Phong):
 
 
 class Transparent(Phong):
-    def __init__(self, kd, cd, exp, sampler, ior, kt, kr, ka=None):
-        super(Transparent, self).__init__(kd, cd, exp, ka)
+    def __init__(self, ka, kd, ks, cd, exp, sampler, ior, kt, kr):
+        super(Transparent, self).__init__(ka, kd, ks, cd, exp, sampler)
         self.reflective_bdrf = PerfectSpecular(sampler, kr, cd)
         self.specular_btrf = PerfectTransmitter(ior, kt)
 

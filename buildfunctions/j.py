@@ -33,9 +33,8 @@ class BuildFunction(BuildFunctionBase):
         world.tracer = Tracer(world)
         world.objects = []
 
-        matte1 = Matte(1, 1, numpy.array((1.,.84,.1)))  # gold
-        matte2 = Matte(1, 1, numpy.array((1.,1.,1.)))  # white
-
+        matte1 = Matte(ka=1, kd=1, cd=numpy.array([1., .84, .1]))
+        matte2 = Matte(ka=1, kd=1, cd=numpy.array([1., 1., 1.]))
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .2)
         world.ambient_color = occluder
 

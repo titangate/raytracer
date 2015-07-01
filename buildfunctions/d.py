@@ -41,8 +41,8 @@ class BuildFunction(BuildFunctionBase):
         d = (1. / 3) ** 0.5 * 20
         world.camera = PinholeCamera(eye=(d, d, d), up=(0.,1.,0.), lookat=(0.,0.,0.), viewing_distance=200.)
 
-        matte1 = Phong(1., numpy.array((1.,1.,0)), 50)  # yellow
-        matte2 = Matte(1., 1., numpy.array((1.,1.,1.)))  # white
+        matte1 = Phong(ka=1, kd=1, ks=1, exp=1, cd=numpy.array([1., 1., 0]))
+        matte2 = Matte(ka=1, kd=1, cd=numpy.array([1., 1., 1.]))
 
         occluder = AmbientOccluder(numpy.array((1.,0.,0.)), .5, sampler)
         occluder = AmbientLight(numpy.array((1.,1.,1.)), .0)

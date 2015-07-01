@@ -210,7 +210,6 @@ class ThinLensCamera(PinholeCamera):
                     plane_point[1] = pixel_size*(row - resolution[1] / 2 + sample[1])
 
                     lens_point = self.eye + numpy.array([disk_sample[0], disk_sample[1], 0.0]) * self.lens_radius
-
                     ray_dir = self.ray_direction(plane_point, lens_point)
                     ray = Ray(lens_point, ray_dir)
                     color_hit = numpy.array(tracer.trace_ray(ray))
@@ -221,6 +220,48 @@ class ThinLensCamera(PinholeCamera):
                     pixel_func((col, row), int(n_color[0]*255), int(n_color[1]*255), int(n_color[2]*255))
 
     def ray_direction(self, plane_point, lens_point):
-        focal_plane_hitpoint = plane_point * self.focal_plane_distance / self.viewing_distance;
+        focal_plane_hitpoint = plane_point * self.focal_plane_distance / self.viewing_distance
         direction = (focal_plane_hitpoint[0] - lens_point[0]) * self.u + (focal_plane_hitpoint[1] - lens_point[1]) * self.v - self.focal_plane_distance * self.w
         return direction / numpy.linalg.norm(direction)
+
+    def render_pixels(self, world, pixel_plane_point_pairs):
+        colors = []
+        for pixel, plane_point in pixel_plane_point_pairs:
+            ray_dir = self.ray_direction(*plane_point)
+            ray = Ray(plane_point[1], ray_dir)
+            color = world.tracer.trace_ray(ray)
+            colors += [(pixel, int(color[0]*255), int(color[1]*255), int(color[2]*255))]
+        return colors
+
+    def get_pixel_plane_point_pairs(self, world, chunk_size):
+        vp = world.viewplane
+        pixel_size = vp.pixel_size
+        resolution = vp.resolution
+
+        coords = []
+        for row_el in vp:
+            coords.append([])
+            for coord in row_el:
+                samples = vp.sampler.sample()
+                disk_samples = vp.sampler.sample_unit_disk()
+                coords[-1].append(zip(samples, disk_samples))
+
+        results = []
+
+        sample_to_hit = range(len(samples))
+        random.shuffle(sample_to_hit)
+        sample_count = 0
+        for sample_idx in sample_to_hit:
+            sample_count += 1
+            for row, row_el in enumerate(coords):
+                for col, samples in enumerate(row_el):
+                    sample, disk_sample = coords[row][col][sample_idx]
+                    plane_point = numpy.zeros(3)
+                    plane_point[0] = pixel_size * (col - resolution[0] / 2 + sample[0])
+                    plane_point[1] = pixel_size * (row - resolution[1] / 2 + sample[1])
+                    lens_point = self.eye + numpy.array([disk_sample[0], disk_sample[1], 0.0]) * self.lens_radius
+                    results.append(((col, row), (plane_point, lens_point),))
+                    if len(results) >= chunk_size:
+                        yield results
+                        results = []
+        yield results
