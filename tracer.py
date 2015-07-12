@@ -35,6 +35,29 @@ class Tracer(object):
             return self.world.background_color
 
 
+class WhittedTracer(object):
+    def __init__(self, world, depth_limit=5):
+        self.world = world
+        self.depth_limit = depth_limit
+
+    def trace_ray(self, ray, depth=0, tminlist=None):
+        if depth > self.depth_limit:
+            if tminlist:
+                tminlist[0] = 0
+            return self.world.background_color
+        shader_rec = self.world.hit_objects(ray)
+        if shader_rec:
+            shader_rec.ray = ray
+            shader_rec.depth = depth
+            if tminlist:
+                tminlist[0] = shader_rec.tmin
+            return shader_rec.material.shade(shader_rec)
+        else:
+            if tminlist:
+                tminlist[0] = 0
+            return self.world.background_color
+
+
 class AreaLightTracer(object):
     def __init__(self, world):
         self.world = world

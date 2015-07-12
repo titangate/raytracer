@@ -101,7 +101,6 @@ class Instance(GeometryObject):
         return Ray(origin=origin, direction=direction)
 
     def hit(self, ray):
-        # import ipdb; ipdb.set_trace()
         inv_ray = self.inv_ray(ray)
         hit = self.obj.hit(inv_ray)
         if hit:
@@ -269,7 +268,7 @@ class Sphere(GeometryObject):
                 t = (-b + e) / denom
             if (t > epsilon):
                 normal = (temp + t * ray.direction) / self.radius
-                local_hit_point = ray.origin + t * ray.direction
+                local_hit_point = ray.origin + t * ray.direction - self.center
                 return ShadeRecord(normal=normal, local_hit_point=local_hit_point, tmin=t, material=self.get_material())
 
         return None
